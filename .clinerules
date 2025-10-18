@@ -1,0 +1,396 @@
+# Tampa Volunteers Platform
+
+## Project Overview
+Tampa Volunteers is a volunteer management platform connecting community members with local volunteer opportunities in the Tampa Bay area. Organizations post volunteer needs and individuals discover and sign up for opportunities matching their interests.
+
+## Architecture
+- **Backend**: Spring Boot (Java) - REST API
+- **Frontend**: Vite (React/Vue) - SPA
+- **Database**: PostgreSQL
+- **Structure**: Monorepo or separate repos (tampavolunteers-backend, tampavolunteers-frontend)
+
+## Tech Stack
+
+### Backend
+- Spring Boot 3.x
+- Spring Security + JWT authentication
+- Spring Data JPA / Hibernate
+- PostgreSQL JDBC driver
+- Flyway/Liquibase for migrations
+- Swagger/OpenAPI for documentation
+- Maven build tool
+
+### Frontend
+- Vite dev server
+- React/Vue framework
+- React Router/Vue Router
+- Axios for API calls
+- TailwindCSS or Material-UI
+- Environment-based configuration
+
+## Repository Structure
+
+### Backend (tampavolunteers-backend/)
+```
+src/main/java/org/tampavolunteers/
+  ├── controller/          # REST endpoints
+  ├── service/             # Business logic
+  ├── repository/          # JPA repositories
+  ├── model/               # Entity classes
+  ├── dto/                 # Data transfer objects
+  ├── config/              # Spring configuration
+  ├── security/            # Auth & authorization
+  └── exception/           # Custom exceptions
+
+src/main/resources/
+  ├── application.properties
+  ├── application-dev.properties
+  ├── application-prod.properties
+  └── db/migration/        # Database migrations
+
+pom.xml
+```
+
+### Frontend (tampavolunteers-frontend/)
+```
+src/
+  ├── components/          # Reusable UI components
+  ├── pages/               # Page components
+  ├── services/            # API service layer
+  ├── hooks/               # Custom React hooks
+  ├── context/             # React Context/Store
+  ├── utils/               # Helper functions
+  ├── types/               # TypeScript types
+  └── assets/              # Images, fonts, etc.
+
+public/
+package.json
+vite.config.js
+.env.development
+.env.production
+```
+
+## Data Model
+
+### Core Entities
+
+**User**
+- id (UUID/Long)
+- email (unique)
+- passwordHash
+- firstName, lastName
+- phone
+- role (VOLUNTEER, ORG_ADMIN, ADMIN)
+- createdAt, updatedAt
+
+**Organization**
+- id
+- name
+- description
+- website
+- contactEmail, contactPhone
+- address (street, city, state, zip)
+- verified (boolean)
+- userId (admin user)
+- createdAt
+
+**Opportunity**
+- id
+- organizationId
+- title
+- description
+- startDateTime, endDateTime
+- location (address fields)
+- slotsAvailable, slotsFilled
+- categoryId
+- skillsRequired (many-to-many)
+- status (DRAFT, PUBLISHED, CANCELLED, COMPLETED)
+- createdAt, updatedAt
+
+**Registration**
+- id
+- opportunityId
+- userId
+- status (PENDING, CONFIRMED, CANCELLED, COMPLETED)
+- registeredAt
+- attendanceConfirmed (boolean)
+
+**VolunteerHours**
+- id
+- registrationId
+- userId
+- opportunityId
+- hoursLogged (decimal)
+- verifiedBy (userId)
+- notes
+- loggedAt
+
+**Category**
+- id
+- name (Environment, Education, Health, Animals, etc.)
+- description
+
+**Skill**
+- id
+- name (Teaching, Construction, Medical, etc.)
+
+## API Endpoints
+
+### Authentication
+- POST /api/auth/register - Register new user
+- POST /api/auth/login - Login and get JWT
+- POST /api/auth/refresh - Refresh JWT token
+- POST /api/auth/logout - Logout
+- GET /api/auth/me - Get current user
+
+### Opportunities
+- GET /api/opportunities - List/search opportunities (public)
+- GET /api/opportunities/{id} - Get opportunity details
+- POST /api/opportunities - Create (ORG_ADMIN)
+- PUT /api/opportunities/{id} - Update (ORG_ADMIN)
+- DELETE /api/opportunities/{id} - Delete (ORG_ADMIN)
+- GET /api/opportunities/search - Advanced search with filters
+
+### Registrations
+- POST /api/registrations - Volunteer registers for opportunity
+- GET /api/registrations/user/{userId} - User's registrations
+- GET /api/registrations/opportunity/{id} - Registrations for opportunity
+- PUT /api/registrations/{id}/status - Update registration status
+- DELETE /api/registrations/{id} - Cancel registration
+
+### Organizations
+- GET /api/organizations - List organizations
+- GET /api/organizations/{id} - Get organization details
+- POST /api/organizations - Create organization
+- PUT /api/organizations/{id} - Update organization
+- GET /api/organizations/{id}/opportunities - Org's opportunities
+
+### Volunteer Hours
+- POST /api/volunteer-hours - Log hours
+- GET /api/volunteer-hours/user/{userId} - User's logged hours
+- PUT /api/volunteer-hours/{id}/verify - Verify hours (ORG_ADMIN)
+- GET /api/volunteer-hours/report - Generate report
+
+### Categories & Skills
+- GET /api/categories - List all categories
+- GET /api/skills - List all skills
+
+## Configuration
+
+### Backend (application.properties)
+```properties
+# Database
+spring.datasource.url=jdbc:postgresql://localhost:5432/tampavolunteers
+spring.datasource.username=${DB_USERNAME}
+spring.datasource.password=${DB_PASSWORD}
+spring.jpa.hibernate.ddl-auto=validate
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
+
+# Server
+server.port=8080
+server.servlet.context-path=/api
+
+# JWT
+jwt.secret=${JWT_SECRET}
+jwt.expiration=86400000
+
+# CORS
+cors.allowed-origins=http://localhost:5173
+
+# Email (optional)
+spring.mail.host=${MAIL_HOST}
+spring.mail.port=587
+```
+
+### Frontend (.env)
+```env
+VITE_API_BASE_URL=http://localhost:8080/api
+VITE_APP_NAME=Tampa Volunteers
+VITE_GOOGLE_MAPS_API_KEY=${GOOGLE_MAPS_KEY}
+```
+
+## Development Commands
+
+### Backend
+```bash
+# Run application
+./mvnw spring-boot:run
+
+# Run tests
+./mvnw test
+
+# Build JAR
+./mvnw clean package
+
+# Database migration
+./mvnw flyway:migrate
+```
+
+### Frontend
+```bash
+# Install dependencies
+npm install
+
+# Run dev server
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+
+# Run tests
+npm run test
+```
+
+## Security Implementation
+
+### Authentication Flow
+1. User submits credentials to /api/auth/login
+2. Backend validates and returns JWT token
+3. Frontend stores token (localStorage)
+4. Frontend includes token in Authorization header: `Bearer {token}`
+5. Backend validates token on protected endpoints
+
+### Authorization
+- VOLUNTEER: Can browse opportunities, register, log hours
+- ORG_ADMIN: All volunteer permissions + manage own organization & opportunities
+- ADMIN: Full platform access, approve organizations
+
+### Password Security
+- BCrypt hashing (strength 12)
+- Minimum 8 characters required
+- No plain text storage
+
+## Database Indexes
+- users.email (unique)
+- opportunities.organizationId
+- opportunities.startDateTime
+- opportunities.categoryId
+- registrations.userId
+- registrations.opportunityId
+- volunteer_hours.userId
+
+## Frontend Key Features
+
+### Pages
+- / - Landing page with search
+- /opportunities - Browse opportunities
+- /opportunities/{id} - Opportunity details
+- /login, /register - Authentication
+- /dashboard - User dashboard
+- /dashboard/volunteer - Volunteer's registrations & hours
+- /dashboard/organization - Org admin management
+- /profile - User profile settings
+
+### State Management
+- User authentication state
+- Current user profile
+- Opportunity filters
+- Registration status
+
+## Error Handling
+
+### Backend
+- Global exception handler with @ControllerAdvice
+- Standard error response format:
+```json
+{
+  "timestamp": "2025-10-17T10:30:00",
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Invalid email format",
+  "path": "/api/auth/register"
+}
+```
+
+### Frontend
+- Toast notifications for user feedback
+- Error boundary components
+- API error interceptors
+- Form validation with clear messages
+
+## Testing Strategy
+
+### Backend Tests
+- Unit tests: Service layer logic
+- Integration tests: Repository & database
+- API tests: Controller endpoints with MockMvc
+- Test database: H2 or Testcontainers PostgreSQL
+
+### Frontend Tests
+- Unit tests: Component logic
+- Integration tests: User flows
+- E2E tests: Critical paths (Playwright/Cypress)
+
+## Deployment
+
+### Backend
+- Build: `./mvnw clean package`
+- Docker image with embedded Tomcat
+- Environment variables for secrets
+- Health check endpoint: /api/actuator/health
+
+### Frontend
+- Build: `npm run build` → dist/
+- Deploy static files to CDN/hosting
+- Environment variables injected at build time
+- Reverse proxy for API (/api → backend)
+
+### Database
+- Managed PostgreSQL instance (AWS RDS, etc.)
+- Automated backups
+- Connection pooling (HikariCP)
+- SSL/TLS connections in production
+
+## Code Style
+
+### Backend (Java)
+- Google Java Style Guide
+- Lombok for boilerplate reduction
+- Constructor injection for dependencies
+- RESTful naming conventions
+- Comprehensive Javadoc for public APIs
+
+### Frontend
+- ESLint + Prettier
+- Functional components with hooks
+- Named exports for components
+- Absolute imports with path aliases (@/)
+- PropTypes or TypeScript for type safety
+
+## Environment Variables Required
+
+### Backend
+- DB_USERNAME
+- DB_PASSWORD
+- JWT_SECRET
+- MAIL_HOST (optional)
+- MAIL_USERNAME (optional)
+- MAIL_PASSWORD (optional)
+
+### Frontend
+- VITE_API_BASE_URL
+- VITE_GOOGLE_MAPS_API_KEY (optional)
+
+## Performance Considerations
+- Backend pagination for list endpoints (default 20 items)
+- Database query optimization with proper indexes
+- Frontend lazy loading for routes
+- Image optimization and CDN delivery
+- API response caching where appropriate
+- Connection pooling for database
+
+## Accessibility
+- WCAG 2.1 AA compliance
+- Semantic HTML
+- ARIA labels where needed
+- Keyboard navigation support
+- Screen reader friendly
+
+## Browser Support
+- Chrome/Edge (last 2 versions)
+- Firefox (last 2 versions)
+- Safari (last 2 versions)
+- Mobile browsers (iOS Safari, Chrome Android)
