@@ -28,5 +28,4 @@ tampavolunteers-frontend/.vite/
 tampavolunteers-frontend/.eslintcache
 
 # Backup files
-*.sql
 backup-*.sql
