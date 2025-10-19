@@ -1,9 +1,13 @@
 #!/bin/bash
 
 # Tampa Volunteers - Development Environment Startup Script
-# This script starts the entire development environment
+# This script starts all services via Docker Compose
 
 set -e
+
+# Get the script directory
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd "$SCRIPT_DIR"
 
 echo "🚀 Starting Tampa Volunteers Development Environment..."
 echo ""
@@ -14,73 +18,54 @@ if ! command -v docker &> /dev/null; then
     exit 1
 fi
 
-if ! command -v docker-compose &> /dev/null; then
+if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null 2>&1; then
     echo "❌ Docker Compose is not installed. Please install Docker Compose first."
     exit 1
 fi
 
-# Start PostgreSQL with Docker Compose
-echo "📦 Starting PostgreSQL database..."
-docker-compose up -d
+# Create logs directory if it doesn't exist
+mkdir -p logs
 
-# Wait for PostgreSQL to be ready
-echo "⏳ Waiting for database to be ready..."
-sleep 5
+echo "📦 Building and starting all services..."
+echo ""
 
-until docker-compose exec -T postgres pg_isready -U postgres &> /dev/null; do
-    echo "   Database is still starting..."
+# Start all services with Docker Compose
+docker compose up --build -d
+
+echo ""
+echo "⏳ Waiting for services to be ready..."
+echo ""
+
+# Wait for backend to be healthy (retry for up to 60 seconds)
+MAX_RETRIES=30
+RETRY_COUNT=0
+while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+    if curl -f http://localhost:8080/api/actuator/health &> /dev/null; then
+        echo "✅ Backend is ready!"
+        break
+    fi
+    RETRY_COUNT=$((RETRY_COUNT + 1))
+    echo "   Waiting for backend... ($RETRY_COUNT/$MAX_RETRIES)"
     sleep 2
 done
 
-echo "✅ Database is ready!"
-echo ""
-
-# Check if Java is available
-if ! command -v java &> /dev/null; then
-    echo "⚠️  Java is not installed. Backend will not start automatically."
-    echo "   Please install Java 17+ and run: cd tampavolunteers-backend && ./mvnw spring-boot:run"
-else
-    echo "🔧 Starting Spring Boot backend..."
-    echo "   Backend will be available at http://localhost:8080/api"
-    cd tampavolunteers-backend
-    ./mvnw spring-boot:run > ../logs/backend.log 2>&1 &
-    BACKEND_PID=$!
-    echo "   Backend PID: $BACKEND_PID"
-    cd ..
-fi
-
-# Check if Node.js is available
-if ! command -v node &> /dev/null; then
-    echo "⚠️  Node.js is not installed. Frontend will not start automatically."
-    echo "   Please install Node.js 18+ and run: cd tampavolunteers-frontend && npm run dev"
-else
-    echo "⚛️  Starting Vite frontend..."
-    echo "   Frontend will be available at http://localhost:5173"
-    cd tampavolunteers-frontend
-
-    # Install dependencies if node_modules doesn't exist
-    if [ ! -d "node_modules" ]; then
-        echo "   Installing dependencies..."
-        npm install
-    fi
-
-    npm run dev > ../logs/frontend.log 2>&1 &
-    FRONTEND_PID=$!
-    echo "   Frontend PID: $FRONTEND_PID"
-    cd ..
+if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+    echo "⚠️  Backend health check timed out. Check logs with: docker compose logs backend"
 fi
 
 echo ""
-echo "✨ Development environment is starting up!"
+echo "✨ Development environment is ready!"
 echo ""
 echo "📊 Services:"
-echo "   - PostgreSQL: localhost:5432"
+echo "   - PostgreSQL:  localhost:5432"
 echo "   - Backend API: http://localhost:8080/api"
-echo "   - Frontend: http://localhost:5173"
+echo "   - Frontend:    http://localhost:5173"
 echo ""
-echo "📝 Logs are being written to:"
-echo "   - Backend: logs/backend.log"
-echo "   - Frontend: logs/frontend.log"
+echo "📝 View logs:"
+echo "   - All services:    docker compose logs -f"
+echo "   - Backend only:    docker compose logs -f backend"
+echo "   - Frontend only:   docker compose logs -f frontend"
+echo "   - Database only:   docker compose logs -f postgres"
 echo ""
 echo "🛑 To stop all services, run: ./stop-dev.sh"
 echo ""
