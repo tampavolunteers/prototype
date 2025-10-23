@@ -25,7 +25,10 @@ const Login = () => {
       setLoading(false);
     }
   };
-  
+
+  const handleGoogleAuth = async () => {
+    window.open(`https://localhost:8080/auth/google`, "_self");
+  };
 
   return (
     <div className="max-w-md mx-auto mt-8">
@@ -89,11 +92,11 @@ const Login = () => {
           </button>
 
           <button
-              type="submit"
-              disabled={loading}
-              className="w-1/2 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition disabled:bg-gray-400"
-            >
-              {loading ? 'Google' : 'Google'}
+            onClick={handleGoogleAuth}
+            disabled={loading}
+            className="w-1/2 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition disabled:bg-gray-400"
+          >
+            {loading ? '...' : 'Login with Google'}
           </button>
         </div>
 

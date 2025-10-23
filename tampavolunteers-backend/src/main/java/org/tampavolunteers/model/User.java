@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.security.AuthProvider;
 import java.time.LocalDateTime;
 
 /**
@@ -35,6 +36,13 @@ public class User {
     @Column(name = "last_name", nullable = false, length = 100)
     private String lastName;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "auth_provider", length = 20)
+    private AuthProvider authProvider = AuthProvider.LOCAL;
+
+    @Column(name = "provider_id")
+    private String providerId;
+
     @Column(length = 20)
     private String phone;
 
@@ -54,5 +62,11 @@ public class User {
         VOLUNTEER,
         ORG_ADMIN,
         ADMIN
+    }
+
+    public enum AuthProvider {
+        LOCAL,
+        GOOGLE,
+        GITHUB
     }
 }
