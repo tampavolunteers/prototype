@@ -11,7 +11,10 @@ import java.security.AuthProvider;
 import java.time.LocalDateTime;
 
 /**
- * User entity representing platform users (volunteers, organization admins, and system admins).
+ * User entity (volunteers, organization admins, and system admins).
+ * --------------------------------------------------------------------------------------------
+ * Essentially all the things that'll define our data structure for users.
+ * "Models" the values that the DB should have. * Kinda. *
  */
 @Entity
 @Table(name = "users")
@@ -19,6 +22,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class User {
+
+
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

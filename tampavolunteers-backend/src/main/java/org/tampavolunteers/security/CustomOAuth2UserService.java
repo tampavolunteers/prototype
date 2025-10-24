@@ -80,8 +80,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     }
 
     private String[] splitName(String name) {
-        String firstName = "";
-        String lastName = "";
+        String firstName, lastName;
         if (name != null) {
             String[] parts = name.split(" ", 2);
             firstName = parts[0];
