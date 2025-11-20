@@ -38,7 +38,7 @@ public class SecurityConfig {
     private final CustomOAuth2UserService oAuth2UserService;
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, CustomOAuth2UserService customOAuth2UserService) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
@@ -52,7 +52,7 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .oauth2Login(oauth -> oauth
-                        .userInfoEndpoint(user -> user.userService(oAuth2UserService)))
+                .userInfoEndpoint(user -> user.userService(oAuth2UserService)))
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
 
