@@ -1,4 +1,4 @@
-package org.tampavolunteers.security;
+package org.tampavolunteers.security.OAuth;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;

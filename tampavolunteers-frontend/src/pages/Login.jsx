@@ -29,6 +29,9 @@ const Login = () => {
   const handleGoogleAuth = async () => {
     window.open(`https://localhost:8080/auth/google`, "_self");
   };
+  const handleGitAuth = async () => {
+    window.open(`https://localhost:8080/auth/github`, "_self");
+  };
 
   return (
     <div className="max-w-md mx-auto mt-8">
@@ -84,7 +87,7 @@ const Login = () => {
 
         <div className='flex justify-between mt-4 space-x-10'>
           <button
-              type="submit"
+              onClick={handleGitAuth}
               disabled={loading}
               className="w-1/2 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition disabled:bg-gray-400"
             >
