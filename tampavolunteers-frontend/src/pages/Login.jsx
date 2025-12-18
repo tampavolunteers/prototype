@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import api from '../services/api';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -27,10 +28,14 @@ const Login = () => {
   };
 
   const handleGoogleAuth = async () => {
-    window.open(`https://localhost:8080/auth/google`, "_self");
+    // Spring Security OAuth2 standard endpoint (uses api.defaults.baseURL which includes /api)
+    const baseURL = api.defaults.baseURL; // http://localhost:8080/api
+    window.location.href = `${baseURL}/oauth2/authorization/google`;
   };
   const handleGitAuth = async () => {
-    window.open(`https://localhost:8080/auth/github`, "_self");
+    // Spring Security OAuth2 standard endpoint (uses api.defaults.baseURL which includes /api)
+    const baseURL = api.defaults.baseURL; // http://localhost:8080/api
+    window.location.href = `${baseURL}/oauth2/authorization/github`;
   };
 
   return (
@@ -81,9 +86,6 @@ const Login = () => {
             {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
-
-
-        // TODO: Actually make these buttons do something.
 
         <div className='flex justify-between mt-4 space-x-10'>
           <button
