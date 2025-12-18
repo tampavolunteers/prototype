@@ -1,35 +1,57 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { authService } from '../services/authService';
 
 const OAuthSuccess = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { setToken } = useAuth();
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    const token = searchParams.get('token');
+    const handleOAuthCallback = async () => {
+      const token = searchParams.get('token');
 
-    if (token) {
-      // Store the token
-      localStorage.setItem('token', token);
-      if (setToken) {
-        setToken(token);
+      if (token) {
+        try {
+          // Store the token
+          localStorage.setItem('token', token);
+
+          // Fetch the current user data
+          const userData = await authService.getCurrentUser();
+
+          // Store user data in localStorage
+          localStorage.setItem('user', JSON.stringify(userData));
+
+          // Redirect to dashboard
+          navigate('/dashboard');
+        } catch (error) {
+          console.error('OAuth authentication failed:', error);
+          setError('Authentication failed. Please try again.');
+          setTimeout(() => navigate('/login'), 2000);
+        }
+      } else {
+        // No token found, redirect to login
+        navigate('/login');
       }
+    };
 
-      // Redirect to dashboard
-      navigate('/dashboard');
-    } else {
-      // No token found, redirect to login
-      navigate('/login');
-    }
-  }, [searchParams, navigate, setToken]);
+    handleOAuthCallback();
+  }, [searchParams, navigate]);
 
   return (
     <div className="flex items-center justify-center min-h-screen">
       <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-        <p className="mt-4 text-gray-600">Completing authentication...</p>
+        {error ? (
+          <div>
+            <p className="text-red-600 text-lg">{error}</p>
+            <p className="mt-2 text-gray-600">Redirecting to login...</p>
+          </div>
+        ) : (
+          <div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Completing authentication...</p>
+          </div>
+        )}
       </div>
     </div>
   );

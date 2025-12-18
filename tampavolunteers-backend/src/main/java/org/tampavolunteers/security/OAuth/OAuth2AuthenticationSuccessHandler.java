@@ -11,7 +11,9 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.stereotype.Component;
 import org.tampavolunteers.model.User;
 import org.tampavolunteers.repository.UserRepository;
-import org.tampavolunteers.security.JwtTokenProvider;
+import org.tampavolunteers.security.JwtUtil;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.tampavolunteers.security.CustomUserDetailsService;
 
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -21,8 +23,9 @@ import java.nio.charset.StandardCharsets;
 @RequiredArgsConstructor
 public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccessHandler {
 
-    private final JwtTokenProvider jwtTokenProvider;
+    private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
+    private final CustomUserDetailsService userDetailsService;
 
     @Value("${app.frontend-url:http://localhost:3000}")
     private String frontendUrl;
@@ -67,7 +70,8 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
             return;
         }
 
-        String token = jwtTokenProvider.generateToken(email);
+        UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+        String token = jwtUtil.generateToken(userDetails);
         String redirectUrl = frontendUrl + "/oauth-success?token=" +
                 URLEncoder.encode(token, StandardCharsets.UTF_8);
 
