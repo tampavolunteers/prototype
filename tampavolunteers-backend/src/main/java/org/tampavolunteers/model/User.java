@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.security.AuthProvider;
 import java.time.LocalDateTime;
 
 /**
@@ -17,13 +16,13 @@ import java.time.LocalDateTime;
  * "Models" the values that the DB should have. * Kinda. *
  */
 @Entity
-@Table(name = "users")
+@Table(name = "users", indexes = {
+        @Index(name = "idx_unique_provider_auth", columnList = "provider_id,auth_provider", unique = true)
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class User {
-
-
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
