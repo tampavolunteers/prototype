@@ -1,18 +1,18 @@
 #!/bin/bash
 
-# Rebuild Backend and Database
-# This script stops, rebuilds, and restarts the backend and database containers
+# Rebuild Backend Only
+# This script stops, rebuilds, and restarts only the backend container
 
-echo "Stopping backend and database containers..."
-docker-compose stop backend postgres
+echo "Stopping backend container..."
+docker-compose stop backend
 
 echo "Rebuilding backend container..."
 docker-compose build backend
 
-echo "Starting backend and database containers..."
-docker-compose up -d postgres backend
+echo "Starting backend container..."
+docker-compose up -d backend
 
-echo "Waiting for services to be healthy..."
+echo "Waiting for backend to start..."
 sleep 5
 
 echo "Showing backend logs (Ctrl+C to exit)..."
