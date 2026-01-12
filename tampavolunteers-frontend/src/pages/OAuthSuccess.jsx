@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { authService } from '../services/authService';
+import { useAuth } from '../context/AuthContext';
 
 const OAuthSuccess = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [error, setError] = useState(null);
+  const { setUserData } = useAuth();
 
   useEffect(() => {
     const handleOAuthCallback = async () => {
@@ -22,6 +24,9 @@ const OAuthSuccess = () => {
           // Store user data in localStorage
           localStorage.setItem('user', JSON.stringify(userData));
 
+          // Update the AuthContext state
+          setUserData(userData);
+
           // Redirect to dashboard
           navigate('/dashboard');
         } catch (error) {
@@ -36,7 +41,7 @@ const OAuthSuccess = () => {
     };
 
     handleOAuthCallback();
-  }, [searchParams, navigate]);
+  }, [searchParams, navigate, setUserData]);
 
   return (
     <div className="flex items-center justify-center min-h-screen">
