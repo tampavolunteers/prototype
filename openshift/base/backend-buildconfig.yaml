@@ -1,0 +1,42 @@
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: backend
+  namespace: tampavolunteers
+  labels:
+    app.kubernetes.io/name: backend
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: tampavolunteers-platform
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: backend:latest
+  source:
+    type: Git
+    git:
+      # Update with your repository URL
+      uri: https://github.com/tampavolunteers/prototype.git
+      ref: main
+    contextDir: tampavolunteers-backend
+    sourceSecret:
+      name: github-credentials
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Dockerfile
+  triggers:
+    - type: ConfigChange
+    - type: ImageChange
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: backend
+  namespace: tampavolunteers
+  labels:
+    app.kubernetes.io/name: backend
+    app.kubernetes.io/part-of: tampavolunteers-platform
+spec:
+  lookupPolicy:
+    local: true
