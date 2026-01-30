@@ -10,8 +10,11 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies (including devDependencies for build)
-# Using npm install with reduced memory footprint for constrained CI environments
-RUN npm install --no-audit --prefer-offline --maxsockets=1 && \
+# Using npm ci with memory constraints for CI environments
+# NODE_OPTIONS limits heap to prevent OOM in constrained environments
+ENV NODE_OPTIONS="--max-old-space-size=512"
+RUN npm ci --no-audit --maxsockets=1 || \
+    (echo "Retrying npm install..." && npm install --no-audit --prefer-offline --maxsockets=1) && \
     npm cache clean --force
 
 # Copy source code
@@ -25,8 +28,8 @@ ARG VITE_APP_NAME="Tampa Volunteers"
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 ENV VITE_APP_NAME=$VITE_APP_NAME
 
-# Build the application
-RUN npm run build
+# Build the application (NODE_OPTIONS already set above for memory limits)
+RUN npm run build || (echo "Build failed, retrying..." && npm run build)
 
 # Stage 2: Serve with Nginx
 FROM nginx:alpine
