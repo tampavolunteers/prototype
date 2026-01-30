@@ -10,7 +10,9 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies (including devDependencies for build)
-RUN npm ci --no-audit
+# Using npm install with reduced memory footprint for constrained CI environments
+RUN npm install --no-audit --prefer-offline --maxsockets=1 && \
+    npm cache clean --force
 
 # Copy source code
 COPY . .
