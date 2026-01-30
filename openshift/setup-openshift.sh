@@ -121,6 +121,58 @@ configure_secrets() {
     fi
 }
 
+# Configure GHCR pull secret for pulling images from GitHub Container Registry
+configure_ghcr_secret() {
+    step "Configuring GitHub Container Registry pull secret..."
+
+    echo ""
+    echo "Images are pulled from ghcr.io/tampavolunteers/prototype"
+    echo "You need a GitHub Personal Access Token (PAT) with 'read:packages' scope."
+    echo ""
+    echo "To create a PAT:"
+    echo "  1. Go to https://github.com/settings/tokens"
+    echo "  2. Generate new token (classic)"
+    echo "  3. Select 'read:packages' scope"
+    echo "  4. Copy the token"
+    echo ""
+
+    # Check if secret already exists
+    if oc get secret ghcr-pull-secret -n "$PROJECT_NAME" &> /dev/null; then
+        read -p "GHCR pull secret already exists. Do you want to update it? (y/N): " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            success "Using existing GHCR pull secret"
+            return
+        fi
+        oc delete secret ghcr-pull-secret -n "$PROJECT_NAME"
+    fi
+
+    read -p "Enter your GitHub username: " GITHUB_USER
+    read -sp "Enter your GitHub PAT: " GITHUB_PAT
+    echo ""
+    read -p "Enter your email (for registry): " GITHUB_EMAIL
+
+    if [[ -z "$GITHUB_USER" || -z "$GITHUB_PAT" ]]; then
+        error "GitHub username and PAT are required"
+        echo "You can create the secret manually later with:"
+        echo "  oc create secret docker-registry ghcr-pull-secret \\"
+        echo "    --docker-server=ghcr.io \\"
+        echo "    --docker-username=<username> \\"
+        echo "    --docker-password=<pat> \\"
+        echo "    --docker-email=<email>"
+        return 1
+    fi
+
+    oc create secret docker-registry ghcr-pull-secret \
+        --docker-server=ghcr.io \
+        --docker-username="$GITHUB_USER" \
+        --docker-password="$GITHUB_PAT" \
+        --docker-email="${GITHUB_EMAIL:-$GITHUB_USER@users.noreply.github.com}" \
+        -n "$PROJECT_NAME"
+
+    success "GHCR pull secret created"
+}
+
 # Apply Kubernetes resources
 apply_resources() {
     step "Applying Kubernetes resources..."
@@ -135,6 +187,9 @@ apply_resources() {
     echo "Applying Secrets..."
     oc apply -f "$SCRIPT_DIR/base/secret.yaml"
 
+    # Note: GHCR pull secret is created via configure_ghcr_secret() function
+    # which uses 'oc create secret docker-registry' for proper encoding
+
     echo "Applying PostgreSQL PVC..."
     oc apply -f "$SCRIPT_DIR/base/postgres-pvc.yaml"
 
@@ -145,45 +200,9 @@ apply_resources() {
     success "Core resources applied"
 }
 
-# Setup image builds
-setup_builds() {
-    step "Setting up image builds..."
-
-    echo "Creating Backend ImageStream and BuildConfig..."
-    oc apply -f "$SCRIPT_DIR/base/backend-buildconfig.yaml"
-
-    echo "Creating Frontend ImageStream and BuildConfig..."
-    oc apply -f "$SCRIPT_DIR/base/frontend-buildconfig.yaml"
-
-    success "Build configurations created"
-}
-
-# Start builds
-start_builds() {
-    step "Starting image builds..."
-
-    read -p "Do you want to start the builds now? (Y/n): " -n 1 -r
-    echo
-
-    if [[ ! $REPLY =~ ^[Nn]$ ]]; then
-        echo "Starting backend build..."
-        oc start-build backend --follow=false
-
-        echo "Starting frontend build..."
-        oc start-build frontend --follow=false
-
-        echo ""
-        echo "Builds started in background. Monitor with:"
-        echo "  oc logs -f bc/backend"
-        echo "  oc logs -f bc/frontend"
-        echo ""
-        echo "Or view in the OpenShift web console."
-    else
-        echo "Skipping builds. Start manually with:"
-        echo "  oc start-build backend"
-        echo "  oc start-build frontend"
-    fi
-}
+# Note: Image builds now happen via GitHub Actions and are pushed to ghcr.io
+# The setup_builds and start_builds functions have been removed.
+# Images are pulled from ghcr.io/tampavolunteers/prototype/backend and /frontend
 
 # Deploy application
 deploy_application() {
@@ -241,10 +260,10 @@ main() {
             check_prerequisites
             setup_project
             ;;
-        --build)
+        --ghcr-secret)
             check_prerequisites
-            setup_builds
-            start_builds
+            oc project "$PROJECT_NAME" 2>/dev/null || setup_project
+            configure_ghcr_secret
             ;;
         --deploy)
             check_prerequisites
@@ -259,24 +278,26 @@ main() {
             echo "Usage: $0 [OPTIONS]"
             echo ""
             echo "Options:"
-            echo "  (none)          Full setup: project, secrets, builds, deploy"
+            echo "  (none)          Full setup: project, secrets, GHCR auth, deploy"
             echo "  --check         Check prerequisites only"
             echo "  --project-only  Create/switch to project only"
-            echo "  --build         Setup and start builds only"
+            echo "  --ghcr-secret   Configure GHCR pull secret only"
             echo "  --deploy        Deploy application only"
             echo "  --status        Show deployment status"
             echo "  --help          Show this help"
             echo ""
             echo "Environment variables:"
             echo "  PROJECT_NAME    OpenShift project name (default: tampavolunteers)"
+            echo ""
+            echo "Note: Images are built via GitHub Actions and stored in ghcr.io"
+            echo "      You need a GitHub PAT with 'read:packages' scope for GHCR access"
             ;;
         *)
             check_prerequisites
             setup_project
             configure_secrets
+            configure_ghcr_secret
             apply_resources
-            setup_builds
-            start_builds
             deploy_application
             show_status
             ;;
