@@ -19,9 +19,11 @@ spec:
         app.kubernetes.io/component: api
         app.kubernetes.io/part-of: tampavolunteers-platform
     spec:
+      imagePullSecrets:
+        - name: ghcr-pull-secret
       containers:
         - name: backend
-          image: backend:latest
+          image: ghcr.io/tampavolunteers/prototype/backend:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
