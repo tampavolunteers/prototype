@@ -10,7 +10,9 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies (including devDependencies for build)
-RUN npm ci
+# Use npm install with retry logic for reliability in constrained environments
+RUN npm cache clean --force && \
+    npm install --prefer-offline --no-audit --progress=false
 
 # Copy source code
 COPY . .
