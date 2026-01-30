@@ -29,3 +29,6 @@ tampavolunteers-frontend/.eslintcache
 
 # Backup files
 backup-*.sql
+
+# Kubernetes/OpenShift secrets (use secret.yaml.example as template)
+openshift/base/secret.yaml
