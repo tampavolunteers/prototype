@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Opportunities from './pages/Opportunities';
+import OAuthSuccess from './pages/OAuthSuccess';
 import PrivateRoute from './components/PrivateRoute';
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/oauth-success" element={<OAuthSuccess />} />
               <Route path="/opportunities" element={<Opportunities />} />
               <Route
                 path="/dashboard"

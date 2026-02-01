@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import api from '../services/api';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -24,6 +25,17 @@ const Login = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGoogleAuth = async () => {
+    // Spring Security OAuth2 standard endpoint (uses api.defaults.baseURL which includes /api)
+    const baseURL = api.defaults.baseURL; // http://localhost:8080/api
+    window.location.href = `${baseURL}/oauth2/authorization/google`;
+  };
+  const handleGitAuth = async () => {
+    // Spring Security OAuth2 standard endpoint (uses api.defaults.baseURL which includes /api)
+    const baseURL = api.defaults.baseURL; // http://localhost:8080/api
+    window.location.href = `${baseURL}/oauth2/authorization/github`;
   };
 
   return (
@@ -74,6 +86,24 @@ const Login = () => {
             {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
+
+        <div className='flex justify-between mt-4 space-x-10'>
+          <button
+              onClick={handleGitAuth}
+              disabled={loading}
+              className="w-1/2 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition disabled:bg-gray-400"
+            >
+              {loading ? 'Github' : 'Github'}
+          </button>
+
+          <button
+            onClick={handleGoogleAuth}
+            disabled={loading}
+            className="w-1/2 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition disabled:bg-gray-400"
+          >
+            {loading ? '...' : 'Login with Google'}
+          </button>
+        </div>
 
         <p className="mt-4 text-center text-gray-600">
           Don't have an account?{' '}
