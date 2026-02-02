@@ -51,6 +51,28 @@ spec:
                 secretKeyRef:
                   name: tampavolunteers-secrets
                   key: JWT_SECRET
+            # Google OAuth2
+            - name: GOOGLE_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: tampavolunteers-secrets
+                  key: GOOGLE_CLIENT_ID
+            - name: GOOGLE_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: tampavolunteers-secrets
+                  key: GOOGLE_CLIENT_SECRET
+            # GitHub OAuth2
+            - name: GITHUB_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: tampavolunteers-secrets
+                  key: GITHUB_CLIENT_ID
+            - name: GITHUB_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: tampavolunteers-secrets
+                  key: GITHUB_CLIENT_SECRET
             # CORS configuration - update with your actual frontend URL
             - name: CORS_ALLOWED_ORIGINS
               value: "https://frontend-tampavolunteers.apps.your-cluster.com"

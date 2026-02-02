@@ -132,6 +132,88 @@ Update the values in `secret.yaml`:
 - `POSTGRES_PASSWORD`: Your generated database password
 - `SPRING_DATASOURCE_PASSWORD`: Same as POSTGRES_PASSWORD
 
+### OAuth2 Credentials Setup
+
+The application supports Google and GitHub OAuth2 authentication. You'll need to create OAuth applications with each provider and configure the credentials in `secret.yaml`.
+
+#### Google OAuth2 Setup
+
+1. Go to the [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select an existing one
+3. Navigate to **APIs & Services > Credentials**
+   - Direct URL: https://console.cloud.google.com/apis/credentials
+4. Click **Create Credentials > OAuth client ID**
+5. If prompted, configure the OAuth consent screen first:
+   - Go to **OAuth consent screen**
+   - Select **External** (or Internal for Google Workspace)
+   - Fill in the required fields (App name, User support email, Developer contact)
+   - Add scopes: `email`, `profile`, `openid`
+   - Add test users if in testing mode
+6. Create OAuth client ID:
+   - Application type: **Web application**
+   - Name: `Tampa Volunteers` (or your app name)
+   - Authorized JavaScript origins:
+     ```
+     https://frontend-tampavolunteers.apps.your-cluster.com
+     ```
+   - Authorized redirect URIs:
+     ```
+     https://backend-tampavolunteers.apps.your-cluster.com/api/oauth2/callback/google
+     https://backend-tampavolunteers.apps.your-cluster.com/login/oauth2/code/google
+     ```
+7. Copy the **Client ID** and **Client Secret**
+
+#### GitHub OAuth2 Setup
+
+1. Go to [GitHub Developer Settings](https://github.com/settings/developers)
+   - Direct URL: https://github.com/settings/apps
+2. Click **OAuth Apps** in the left sidebar
+3. Click **New OAuth App** (or **Register a new application**)
+4. Fill in the application details:
+   - **Application name**: `Tampa Volunteers` (or your app name)
+   - **Homepage URL**:
+     ```
+     https://frontend-tampavolunteers.apps.your-cluster.com
+     ```
+   - **Authorization callback URL**:
+     ```
+     https://backend-tampavolunteers.apps.your-cluster.com/api/oauth2/callback/github
+     ```
+5. Click **Register application**
+6. Copy the **Client ID**
+7. Click **Generate a new client secret** and copy it immediately (it won't be shown again)
+
+#### Configure OAuth Secrets in OpenShift
+
+Update `base/secret.yaml` with your OAuth credentials:
+
+```yaml
+stringData:
+  # ... other secrets ...
+
+  # Google OAuth2 credentials
+  GOOGLE_CLIENT_ID: "your-google-client-id.apps.googleusercontent.com"
+  GOOGLE_CLIENT_SECRET: "your-google-client-secret"
+
+  # GitHub OAuth2 credentials
+  GITHUB_CLIENT_ID: "your-github-client-id"
+  GITHUB_CLIENT_SECRET: "your-github-client-secret"
+```
+
+After updating the secrets, apply them:
+```bash
+oc apply -f base/secret.yaml
+
+# Restart the backend to pick up the new secrets
+oc rollout restart deployment/backend
+```
+
+**Important Notes:**
+- Replace `your-cluster.com` with your actual OpenShift cluster domain
+- Get your actual route URLs with: `oc get routes`
+- Keep your client secrets secure - never commit them to version control
+- For production, consider using OpenShift's built-in secret management or external secret stores
+
 ### ConfigMap
 
 Edit `base/configmap.yaml` to customize:
