@@ -86,4 +86,8 @@ public class AuthService {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new BadRequestException("User not found"));
     }
+
+    public User getCurrentUserByProviderId(String providerId) {
+        return userRepository.findByProviderId(providerId).orElse(null);
+    }
 }
