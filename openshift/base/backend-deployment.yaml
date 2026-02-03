@@ -37,11 +37,11 @@ spec:
               echo "PostgreSQL is up!"
           resources:
             requests:
-              memory: "32Mi"
-              cpu: "10m"
+              memory: "128Mi"
+              cpu: "128m"
             limits:
-              memory: "64Mi"
-              cpu: "50m"
+              memory: "256Mi"
+              cpu: "256m"
         # Run Flyway migrations
         - name: flyway-migrate
           image: ghcr.io/tampavolunteers/prototype/backend:latest
@@ -53,6 +53,7 @@ spec:
             - --spring.main.web-application-type=none
             - --spring.flyway.enabled=true
             - --spring.jpa.hibernate.ddl-auto=none
+            - --spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.oauth2.client.servlet.OAuth2ClientAutoConfiguration
           env:
             - name: SPRING_DATASOURCE_URL
               value: "jdbc:postgresql://postgres:5432/tampavolunteers"
@@ -69,7 +70,7 @@ spec:
           resources:
             requests:
               memory: "256Mi"
-              cpu: "100m"
+              cpu: "128m"
             limits:
               memory: "512Mi"
               cpu: "500m"
