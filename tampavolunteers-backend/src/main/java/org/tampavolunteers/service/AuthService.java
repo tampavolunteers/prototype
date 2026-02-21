@@ -1,6 +1,7 @@
 package org.tampavolunteers.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -16,11 +17,14 @@ import org.tampavolunteers.repository.UserRepository;
 import org.tampavolunteers.security.CustomUserDetailsService;
 import org.tampavolunteers.security.JwtUtil;
 
+import java.time.LocalDateTime;
+
 /**
  * Service for authentication and user registration.
  */
 @Service
 @RequiredArgsConstructor
+@ConditionalOnWebApplication
 public class AuthService {
 
     private final UserRepository userRepository;
@@ -41,6 +45,7 @@ public class AuthService {
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
         user.setPhone(request.getPhone());
+        user.setLastLoginAt(LocalDateTime.now());
 
         try {
             user.setRole(User.UserRole.valueOf(request.getRole().toUpperCase()));
@@ -54,6 +59,7 @@ public class AuthService {
         String token = jwtUtil.generateToken(userDetails);
 
         return new AuthenticationResponse(
+                savedUser.getId(),
                 token,
                 savedUser.getEmail(),
                 savedUser.getFirstName(),
@@ -62,6 +68,7 @@ public class AuthService {
         );
     }
 
+    @Transactional
     public AuthenticationResponse login(AuthenticationRequest request) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
@@ -70,10 +77,14 @@ public class AuthService {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new BadRequestException("User not found"));
 
+        user.setLastLoginAt(LocalDateTime.now());
+        userRepository.save(user);
+
         UserDetails userDetails = userDetailsService.loadUserByUsername(request.getEmail());
         String token = jwtUtil.generateToken(userDetails);
 
         return new AuthenticationResponse(
+                user.getId(),
                 token,
                 user.getEmail(),
                 user.getFirstName(),

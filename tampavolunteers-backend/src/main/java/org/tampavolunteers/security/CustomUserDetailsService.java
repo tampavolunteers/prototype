@@ -9,10 +9,12 @@ import org.springframework.stereotype.Service;
 import org.tampavolunteers.model.User;
 import org.tampavolunteers.repository.UserRepository;
 
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Custom UserDetailsService implementation for loading user-specific data.
+ * Grants cumulative authorities so higher roles include lower role permissions.
  */
 @Service
 @RequiredArgsConstructor
@@ -26,7 +28,6 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
 
         // For OAuth users, password authentication should not be used
-        // Use a random BCrypt hash that will never match any input
         String password = user.getPasswordHash();
         if (password == null || password.isEmpty()) {
             // This prevents "null" password encoder error while ensuring OAuth users can't login via password
@@ -36,7 +37,27 @@ public class CustomUserDetailsService implements UserDetailsService {
         return new org.springframework.security.core.userdetails.User(
                 user.getEmail(),
                 password,
-                Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
+                buildAuthorities(user.getRole())
         );
+    }
+
+    private List<SimpleGrantedAuthority> buildAuthorities(User.UserRole role) {
+        List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+        // Cumulative: higher roles include all lower role authorities
+        switch (role) {
+            case SUPER_ADMIN:
+                authorities.add(new SimpleGrantedAuthority("ROLE_SUPER_ADMIN"));
+                // fall through
+            case ADMIN:
+                authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
+                // fall through
+            case ORG_ADMIN:
+                authorities.add(new SimpleGrantedAuthority("ROLE_ORG_ADMIN"));
+                // fall through
+            case VOLUNTEER:
+                authorities.add(new SimpleGrantedAuthority("ROLE_VOLUNTEER"));
+                break;
+        }
+        return authorities;
     }
 }

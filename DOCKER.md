@@ -177,7 +177,56 @@ docker-compose down
 docker volume rm tampavolunteers_postgres_data
 ```
 
+## Running Admin Scripts
+
+The backend includes CLI scripts for managing users and roles. They run via a short-lived Docker container (the `cli` service) in the `tools` profile.
+
+**Prerequisites:**
+- Docker Compose running with at least the `postgres` service
+- The `cli` image built (see below)
+
+**Build the CLI image** (required once, and again after any backend code changes):
+```bash
+docker compose --profile tools build cli
+```
+
+**Available scripts (run from the project root):**
+```bash
+# List all users (add --all to include inactive)
+./tampavolunteers-backend/scripts/list-users.sh
+./tampavolunteers-backend/scripts/list-users.sh --all
+
+# List all admins and super admins
+./tampavolunteers-backend/scripts/list-admins.sh
+
+# Promote a user to super admin
+./tampavolunteers-backend/scripts/add-super-admin.sh user@example.com
+
+# Remove super admin role from a user
+./tampavolunteers-backend/scripts/remove-super-admin.sh user@example.com
+```
+
+Each script runs `docker compose --profile tools run --rm cli <command>`. The container starts, runs the command against the database, and exits — it doesn't interfere with the backend container running on port 8080.
+
 ## Troubleshooting
+
+### CLI Script Fails: `AuthenticationManager` / `APPLICATION FAILED TO START`
+
+The `cli` service is in the `tools` profile, so a plain `docker compose build` skips it. If the CLI image is stale or was never built after a code change, you'll see a Spring startup failure.
+
+**Fix:** rebuild the CLI image explicitly:
+```bash
+docker compose --profile tools build --no-cache cli
+```
+
+To verify the new code made it into the image, copy the JAR to your host and inspect it:
+```bash
+docker compose --profile tools run --rm -v /tmp:/mnt --entrypoint sh cli -c "cp /app/app.jar /mnt/cli-app.jar"
+unzip -l /tmp/cli-app.jar | grep AuthManager
+# Should print: BOOT-INF/classes/org/tampavolunteers/config/AuthManagerConfig.class
+```
+
+If that class is missing, the build didn't pick up the latest source — re-run the build command above.
 
 ### Port 5432 Already in Use
 

@@ -7,8 +7,12 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Opportunities from './pages/Opportunities';
+import OpportunityDetail from './pages/OpportunityDetail';
 import OAuthSuccess from './pages/OAuthSuccess';
+import ProfileSettings from './pages/ProfileSettings';
+import AdminDashboard from './pages/AdminDashboard';
 import PrivateRoute from './components/PrivateRoute';
+import AdminRoute from './components/AdminRoute';
 
 function App() {
   return (
@@ -23,12 +27,29 @@ function App() {
               <Route path="/register" element={<Register />} />
               <Route path="/oauth-success" element={<OAuthSuccess />} />
               <Route path="/opportunities" element={<Opportunities />} />
+              <Route path="/opportunities/:id" element={<OpportunityDetail />} />
               <Route
                 path="/dashboard"
                 element={
                   <PrivateRoute>
                     <Dashboard />
                   </PrivateRoute>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <PrivateRoute>
+                    <ProfileSettings />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/admin"
+                element={
+                  <AdminRoute>
+                    <AdminDashboard />
+                  </AdminRoute>
                 }
               />
               <Route path="*" element={<Navigate to="/" replace />} />
