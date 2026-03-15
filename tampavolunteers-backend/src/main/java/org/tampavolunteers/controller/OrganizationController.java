@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.*;
 import org.tampavolunteers.dto.CreateOrganizationDTO;
 import org.tampavolunteers.dto.InviteMemberDTO;
 import org.tampavolunteers.dto.MemberRoleDTO;
+import org.tampavolunteers.dto.MyOrgDTO;
+import org.tampavolunteers.dto.OrgMemberDTO;
 import org.tampavolunteers.exception.NotFoundException;
 import org.tampavolunteers.model.Organization;
 import org.tampavolunteers.model.OrganizationMember;
@@ -64,8 +66,15 @@ public class OrganizationController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/my")
+    public ResponseEntity<List<MyOrgDTO>> getMyOrganizations(
+            @AuthenticationPrincipal UserDetails principal) {
+        User currentUser = getCurrentUser(principal);
+        return ResponseEntity.ok(organizationService.getMyOrganizations(currentUser));
+    }
+
     @GetMapping("/{id}/members")
-    public ResponseEntity<List<OrganizationMember>> getMembers(@PathVariable Long id) {
+    public ResponseEntity<List<OrgMemberDTO>> getMembers(@PathVariable Long id) {
         return ResponseEntity.ok(organizationService.getMembers(id));
     }
 

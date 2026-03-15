@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { authService } from '../services/authService';
 import api from '../services/api';
@@ -30,7 +30,7 @@ const AdminDashboard = () => {
       </div>
 
       {activeTab === 'Users' && <UsersTab hasRole={hasRole} />}
-      {activeTab === 'Organizations' && <OrganizationsTab />}
+      {activeTab === 'Organizations' && <OrganizationsTab hasRole={hasRole} />}
       {activeTab === 'Audit Log' && hasRole('SUPER_ADMIN') && <AuditLogTab />}
     </div>
   );
@@ -229,13 +229,14 @@ const UserEditModal = ({ user, onClose, onSave, onError }) => {
   );
 };
 
-const OrganizationsTab = () => {
+const OrganizationsTab = ({ hasRole }) => {
   const [orgs, setOrgs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [message, setMessage] = useState(null);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  const [membersOrg, setMembersOrg] = useState(null);
 
   const fetchOrgs = async (p = 0) => {
     setLoading(true);
@@ -267,6 +268,14 @@ const OrganizationsTab = () => {
 
   return (
     <div>
+      {membersOrg && (
+        <OrgMembersModal
+          org={membersOrg}
+          hasRole={hasRole}
+          onClose={() => setMembersOrg(null)}
+        />
+      )}
+
       {message && (
         <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-2 rounded mb-4">
           {message}
@@ -311,7 +320,13 @@ const OrganizationsTab = () => {
                     {org.verified ? 'Verified' : 'Pending'}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-sm">
+                <td className="px-4 py-3 text-sm flex items-center gap-2">
+                  <button
+                    onClick={() => setMembersOrg(org)}
+                    className="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700 transition"
+                  >
+                    Members
+                  </button>
                   {!org.verified && (
                     <button
                       onClick={() => handleVerify(org.id)}
@@ -355,6 +370,140 @@ const OrganizationsTab = () => {
           </button>
         </div>
       )}
+    </div>
+  );
+};
+
+const OrgMembersModal = ({ org, hasRole, onClose }) => {
+  const [members, setMembers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const isSuperAdmin = hasRole('SUPER_ADMIN');
+
+  const fetchMembers = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await authService.getOrgMembers(org.id);
+      setMembers(data);
+    } catch (err) {
+      setError('Failed to load members.');
+    } finally {
+      setLoading(false);
+    }
+  }, [org.id]);
+
+  useEffect(() => { fetchMembers(); }, [fetchMembers]);
+
+  const handleRoleChange = async (userId, role) => {
+    try {
+      await authService.updateOrgMemberRole(org.id, userId, role);
+      fetchMembers();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to update role.');
+    }
+  };
+
+  const handleRemove = async (userId) => {
+    try {
+      await authService.removeOrgMember(org.id, userId);
+      fetchMembers();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to remove member.');
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-screen flex flex-col">
+        <div className="p-6 border-b">
+          <div className="flex justify-between items-start">
+            <div>
+              <h2 className="text-xl font-bold text-gray-800">{org.name}</h2>
+              <p className="text-sm text-gray-500 mt-1">
+                {[org.city, org.state].filter(Boolean).join(', ')}
+                {org.contactEmail && ` · ${org.contactEmail}`}
+                {' '}
+                <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                  org.verified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                }`}>
+                  {org.verified ? 'Verified' : 'Pending'}
+                </span>
+              </p>
+            </div>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+          </div>
+        </div>
+
+        <div className="p-6 overflow-y-auto flex-1">
+          {error && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded mb-4 text-sm">{error}</div>
+          )}
+          {loading ? (
+            <div className="text-gray-600">Loading members...</div>
+          ) : (
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Org Role</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Joined</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {members.map((m) => {
+                  const isOwner = m.role === 'OWNER';
+                  const canAct = isSuperAdmin || !isOwner;
+                  return (
+                    <tr key={m.id}>
+                      <td className="px-4 py-3 text-sm text-gray-900">{m.firstName} {m.lastName}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600">{m.email}</td>
+                      <td className="px-4 py-3 text-sm">
+                        {canAct ? (
+                          <select
+                            value={m.role}
+                            onChange={(e) => handleRoleChange(m.userId, e.target.value)}
+                            className="border border-gray-300 rounded px-2 py-1 text-xs"
+                          >
+                            <option value="OWNER">OWNER</option>
+                            <option value="ADMIN">ADMIN</option>
+                            <option value="MEMBER">MEMBER</option>
+                          </select>
+                        ) : (
+                          <span className="px-2 py-1 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                            {m.role}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        {m.joinedAt ? new Date(m.joinedAt).toLocaleDateString() : '—'}
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        {canAct ? (
+                          <button
+                            onClick={() => handleRemove(m.userId)}
+                            className="text-red-600 hover:text-red-800 text-xs font-medium"
+                          >
+                            Remove
+                          </button>
+                        ) : (
+                          <span className="text-gray-400 text-xs">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+                {members.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-6 text-center text-gray-500 text-sm">No members found.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

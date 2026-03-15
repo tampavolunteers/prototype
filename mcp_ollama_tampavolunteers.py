@@ -5,7 +5,7 @@ Tailored for the Tampa Volunteers (Spring Boot + PostgreSQL + Vite) project.
 
 Setup:
     pip install mcp ollama
-    ollama pull qwen3:30b
+    ollama pull qwen3-coder:30b
 
 Register in ~/.claude.json or .mcp.json:
     {
@@ -29,7 +29,7 @@ import ollama
 # Config
 # ---------------------------------------------------------------------------
 
-DEFAULT_MODEL = "qwen3:30b"
+DEFAULT_MODEL = "qwen3-coder:30b"
 
 SYSTEM_PROMPT = """You are a senior Java/Spring Boot developer working on a volunteer
 management platform called Tampa Volunteers. The stack is:
@@ -205,7 +205,7 @@ async def list_tools() -> list[Tool]:
                     },
                     "model": {
                         "type": "string",
-                        "description": "Ollama model to use. Defaults to qwen3:30b",
+                        "description": "Ollama model to use. Defaults to qwen3-coder:30b",
                         "default": DEFAULT_MODEL,
                     },
                 },

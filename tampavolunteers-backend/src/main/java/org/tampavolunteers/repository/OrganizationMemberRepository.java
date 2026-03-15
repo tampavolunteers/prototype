@@ -20,4 +20,6 @@ public interface OrganizationMemberRepository extends JpaRepository<Organization
     boolean existsByOrganizationIdAndUserIdAndRoleIn(Long orgId, Long userId, List<OrgMemberRole> roles);
 
     void deleteByOrganizationIdAndUserId(Long orgId, Long userId);
+
+    List<OrganizationMember> findByUserIdAndRoleIn(Long userId, List<OrgMemberRole> roles);
 }
