@@ -3,17 +3,33 @@ import { authService } from '../services/authService';
 
 const AuthContext = createContext(null);
 
+// Role hierarchy: higher index = higher privilege
+const ROLE_HIERARCHY = ['VOLUNTEER', 'ORG_ADMIN', 'ADMIN', 'SUPER_ADMIN'];
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is already logged in
     const storedUser = authService.getStoredUser();
     if (storedUser) {
       setUser(storedUser);
+      // Refresh from server to pick up any role changes made since last login
+      authService.getCurrentUser()
+        .then(freshUser => {
+          const merged = { ...storedUser, ...freshUser };
+          localStorage.setItem('user', JSON.stringify(merged));
+          setUser(merged);
+        })
+        .catch(() => {
+          // Token is expired or invalid — clear stale session
+          authService.logout();
+          setUser(null);
+        })
+        .finally(() => setLoading(false));
+    } else {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   const login = async (email, password) => {
@@ -37,6 +53,32 @@ export const AuthProvider = ({ children }) => {
     setUser(userData);
   };
 
+  const refreshUser = async () => {
+    const freshUser = await authService.getCurrentUser();
+    const stored = authService.getStoredUser();
+    const merged = { ...stored, ...freshUser };
+    localStorage.setItem('user', JSON.stringify(merged));
+    setUser(merged);
+    return merged;
+  };
+
+  const updateProfile = async (data) => {
+    const updated = await authService.updateProfile(data);
+    const stored = authService.getStoredUser();
+    const merged = { ...stored, ...updated };
+    localStorage.setItem('user', JSON.stringify(merged));
+    setUser(merged);
+    return merged;
+  };
+
+  // Returns true if current user has at least the given role level
+  const hasRole = (requiredRole) => {
+    if (!user) return false;
+    const userIdx = ROLE_HIERARCHY.indexOf(user.role);
+    const reqIdx = ROLE_HIERARCHY.indexOf(requiredRole);
+    return userIdx >= reqIdx;
+  };
+
   const value = {
     user,
     loading,
@@ -44,6 +86,9 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     setUserData,
+    updateProfile,
+    refreshUser,
+    hasRole,
     isAuthenticated: !!user,
   };
 

@@ -17,5 +17,8 @@
     ],
     "deny": [],
     "ask": []
-  }
+  },
+  "enabledMcpjsonServers": [
+    "ollama-tampavolunteers"
+  ]
 }

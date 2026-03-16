@@ -13,7 +13,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -69,6 +69,25 @@ services:
       - ./tampavolunteers-frontend/vite.config.js:/app/vite.config.js
       # Prevent overwriting node_modules
       - /app/node_modules
+
+  # One-shot CLI runner for admin scripts (scripts/add-super-admin.sh, etc.)
+  # Usage: docker compose --profile tools run --rm cli <command> [args]
+  cli:
+    build:
+      context: ./tampavolunteers-backend
+      dockerfile: Dockerfile
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_PROFILES_ACTIVE: cli
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - tampavolunteers-network
+    profiles:
+      - tools
 
   # Optional: pgAdmin for database management UI
   pgadmin:

@@ -54,6 +54,22 @@ public class User {
     @Column(nullable = false, length = 50)
     private UserRole role;
 
+    @Column(name = "is_public", nullable = false)
+    private Boolean isPublic = false;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "user_status", nullable = false, length = 50)
+    private UserStatus userStatus = UserStatus.VOLUNTEER;
+
+    @Column(columnDefinition = "TEXT")
+    private String bio;
+
+    @Column(name = "avatar_url", length = 500)
+    private String avatarUrl;
+
+    @Column(name = "last_login_at")
+    private LocalDateTime lastLoginAt;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -65,7 +81,8 @@ public class User {
     public enum UserRole {
         VOLUNTEER,
         ORG_ADMIN,
-        ADMIN
+        ADMIN,
+        SUPER_ADMIN
     }
 
     public enum AuthProvider {

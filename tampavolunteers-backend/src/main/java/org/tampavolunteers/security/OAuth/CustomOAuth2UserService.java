@@ -15,6 +15,7 @@ import org.tampavolunteers.model.User;
 import org.tampavolunteers.model.User.AuthProvider;
 import org.tampavolunteers.repository.UserRepository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -98,6 +99,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             // different method)
             user.setAuthProvider(authProvider);
             user.setProviderId(providerId);
+            user.setLastLoginAt(LocalDateTime.now());
             userRepository.save(user);
         } else {
             user = new User();
@@ -107,6 +109,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             user.setRole(User.UserRole.VOLUNTEER);
             user.setAuthProvider(authProvider);
             user.setProviderId(providerId);
+            user.setLastLoginAt(LocalDateTime.now());
             userRepository.save(user);
         }
 

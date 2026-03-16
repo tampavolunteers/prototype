@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "ollama-tampavolunteers": {
+      "command": "/Users/tpowell/.venvs/mcp-ollama/bin/python",
+      "args": ["/Users/tpowell/tampavolunteers/prototype/mcp_ollama_tampavolunteers.py"],
+      "env": {}
+    }
+  }
+}

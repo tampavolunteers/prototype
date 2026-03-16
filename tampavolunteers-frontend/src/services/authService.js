@@ -37,4 +37,82 @@ export const authService = {
   isAuthenticated() {
     return !!localStorage.getItem('token');
   },
+
+  async updateProfile(data) {
+    const response = await api.put('/users/me', data);
+    return response.data;
+  },
+
+  async updateStatus(userStatus) {
+    const response = await api.put('/users/me/status', { userStatus });
+    return response.data;
+  },
+
+  async updateVisibility(isPublic) {
+    const response = await api.put('/users/me/visibility', { isPublic });
+    return response.data;
+  },
+
+  async getAdminUsers(page = 0, size = 20) {
+    const response = await api.get('/admin/users', { params: { page, size } });
+    return response.data;
+  },
+
+  async getAdminOrganizations(page = 0, size = 20) {
+    const response = await api.get('/admin/organizations', { params: { page, size } });
+    return response.data;
+  },
+
+  async verifyOrganization(id) {
+    const response = await api.put(`/admin/organizations/${id}/verify`);
+    return response.data;
+  },
+
+  async getOpportunities(params = {}) {
+    const response = await api.get('/opportunities', { params });
+    return response.data;
+  },
+
+  async getOpportunity(id) {
+    const response = await api.get(`/opportunities/${id}`);
+    return response.data;
+  },
+
+  async getCategories() {
+    const response = await api.get('/categories');
+    return response.data;
+  },
+
+  async getOrganizations() {
+    const response = await api.get('/organizations');
+    return response.data;
+  },
+
+  async createOrganization(data) {
+    const response = await api.post('/organizations', data);
+    return response.data;
+  },
+
+  async getMyOrganizations() {
+    const response = await api.get('/organizations/my');
+    return response.data;
+  },
+
+  async getOrgMembers(orgId) {
+    const response = await api.get(`/organizations/${orgId}/members`);
+    return response.data;
+  },
+
+  async updateOrgMemberRole(orgId, userId, role) {
+    const response = await api.put(`/organizations/${orgId}/members/${userId}/role`, { role });
+    return response.data;
+  },
+
+  async removeOrgMember(orgId, userId) {
+    await api.delete(`/organizations/${orgId}/members/${userId}`);
+  },
+
+  async deleteOrganization(id) {
+    await api.delete(`/organizations/${id}`);
+  },
 };

@@ -2,6 +2,7 @@ package org.tampavolunteers.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -20,6 +21,7 @@ import org.tampavolunteers.service.AuthService;
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
+@ConditionalOnWebApplication
 public class AuthController {
 
     private final AuthService authService;

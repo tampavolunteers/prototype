@@ -50,6 +50,9 @@ public class Organization {
     @Column(nullable = false)
     private Boolean verified = false;
 
+    @Column(nullable = false)
+    private Boolean seeded = false;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;

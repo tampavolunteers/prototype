@@ -66,6 +66,9 @@ public class Opportunity {
     @Column(nullable = false, length = 50)
     private OpportunityStatus status;
 
+    @Column(nullable = false)
+    private Boolean seeded = false;
+
     @ManyToMany
     @JoinTable(
         name = "opportunity_skills",
