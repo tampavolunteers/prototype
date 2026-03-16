@@ -29,4 +29,6 @@ public interface OpportunityRepository extends JpaRepository<Opportunity, Long>,
            "AND (LOWER(o.title) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
            "OR LOWER(o.description) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     List<Opportunity> searchOpportunities(@Param("keyword") String keyword, @Param("now") LocalDateTime now);
+
+    List<Opportunity> findBySeededTrue();
 }
