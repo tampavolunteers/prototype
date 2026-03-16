@@ -53,6 +53,15 @@ export const AuthProvider = ({ children }) => {
     setUser(userData);
   };
 
+  const refreshUser = async () => {
+    const freshUser = await authService.getCurrentUser();
+    const stored = authService.getStoredUser();
+    const merged = { ...stored, ...freshUser };
+    localStorage.setItem('user', JSON.stringify(merged));
+    setUser(merged);
+    return merged;
+  };
+
   const updateProfile = async (data) => {
     const updated = await authService.updateProfile(data);
     const stored = authService.getStoredUser();
@@ -78,6 +87,7 @@ export const AuthProvider = ({ children }) => {
     logout,
     setUserData,
     updateProfile,
+    refreshUser,
     hasRole,
     isAuthenticated: !!user,
   };

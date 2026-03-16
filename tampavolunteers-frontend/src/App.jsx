@@ -11,8 +11,11 @@ import OpportunityDetail from './pages/OpportunityDetail';
 import OAuthSuccess from './pages/OAuthSuccess';
 import ProfileSettings from './pages/ProfileSettings';
 import AdminDashboard from './pages/AdminDashboard';
+import OrgDashboard from './pages/OrgDashboard';
+import OrgDetail from './pages/OrgDetail';
 import PrivateRoute from './components/PrivateRoute';
 import AdminRoute from './components/AdminRoute';
+import OrgAdminRoute from './components/OrgAdminRoute';
 
 function App() {
   return (
@@ -50,6 +53,22 @@ function App() {
                   <AdminRoute>
                     <AdminDashboard />
                   </AdminRoute>
+                }
+              />
+              <Route
+                path="/org-dashboard"
+                element={
+                  <OrgAdminRoute>
+                    <OrgDashboard />
+                  </OrgAdminRoute>
+                }
+              />
+              <Route
+                path="/org-dashboard/:id"
+                element={
+                  <OrgAdminRoute>
+                    <OrgDetail />
+                  </OrgAdminRoute>
                 }
               />
               <Route path="*" element={<Navigate to="/" replace />} />

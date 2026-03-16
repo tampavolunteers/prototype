@@ -9,6 +9,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.tampavolunteers.dto.CreateOrganizationDTO;
 import org.tampavolunteers.dto.InviteMemberDTO;
 import org.tampavolunteers.dto.MemberRoleDTO;
+import org.tampavolunteers.dto.MyOrgDTO;
+import org.tampavolunteers.dto.OrgMemberDTO;
 import org.tampavolunteers.dto.OrganizationAdminDTO;
 import org.tampavolunteers.exception.BadRequestException;
 import org.tampavolunteers.exception.NotFoundException;
@@ -16,6 +18,7 @@ import org.tampavolunteers.model.Organization;
 import org.tampavolunteers.model.OrganizationMember;
 import org.tampavolunteers.model.OrganizationMember.OrgMemberRole;
 import org.tampavolunteers.model.User;
+import org.tampavolunteers.model.UserStatus;
 import org.tampavolunteers.repository.OrganizationMemberRepository;
 import org.tampavolunteers.repository.OrganizationRepository;
 import org.tampavolunteers.repository.UserRepository;
@@ -77,7 +80,9 @@ public class OrganizationService {
         org.setCity(dto.getCity());
         org.setState(dto.getState());
         org.setZip(dto.getZip());
-        org.setVerified(false);
+        org.setSeeded(false);
+        // SUPER_ADMIN-created orgs are auto-verified; all others require approval
+        org.setVerified(currentUser.getRole() == User.UserRole.SUPER_ADMIN);
         org.setUser(currentUser);
 
         Organization saved = organizationRepository.save(org);
@@ -88,6 +93,20 @@ public class OrganizationService {
         ownerMembership.setUser(currentUser);
         ownerMembership.setRole(OrgMemberRole.OWNER);
         memberRepository.save(ownerMembership);
+
+        // Promote platform role to at least ORG_ADMIN
+        if (currentUser.getRole() == User.UserRole.VOLUNTEER) {
+            currentUser.setRole(User.UserRole.ORG_ADMIN);
+        }
+
+        // Update user_status to reflect org representative role
+        if (currentUser.getUserStatus() == UserStatus.VOLUNTEER) {
+            currentUser.setUserStatus(UserStatus.BOTH);
+        } else if (currentUser.getUserStatus() == UserStatus.INACTIVE) {
+            currentUser.setUserStatus(UserStatus.ORG_REPRESENTATIVE);
+        }
+
+        userRepository.save(currentUser);
 
         return saved;
     }
@@ -119,9 +138,48 @@ public class OrganizationService {
         organizationRepository.delete(org);
     }
 
-    public List<OrganizationMember> getMembers(Long orgId) {
+    @Transactional(readOnly = true)
+    public List<OrgMemberDTO> getMembers(Long orgId) {
         getOrganization(orgId); // ensure org exists
-        return memberRepository.findByOrganizationId(orgId);
+        return memberRepository.findByOrganizationId(orgId).stream()
+                .map(this::toOrgMemberDTO)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<MyOrgDTO> getMyOrganizations(User currentUser) {
+        return memberRepository.findByUserIdAndRoleIn(
+                        currentUser.getId(), List.of(OrgMemberRole.OWNER, OrgMemberRole.ADMIN))
+                .stream()
+                .map(m -> toMyOrgDTO(m.getOrganization(), m.getRole()))
+                .toList();
+    }
+
+    private OrgMemberDTO toOrgMemberDTO(OrganizationMember m) {
+        return new OrgMemberDTO(
+                m.getId(),
+                m.getUser().getId(),
+                m.getUser().getEmail(),
+                m.getUser().getFirstName(),
+                m.getUser().getLastName(),
+                m.getRole().name(),
+                m.getJoinedAt(),
+                m.getInvitedBy() != null ? m.getInvitedBy().getEmail() : null
+        );
+    }
+
+    private MyOrgDTO toMyOrgDTO(Organization org, OrgMemberRole myRole) {
+        return new MyOrgDTO(
+                org.getId(),
+                org.getName(),
+                org.getDescription(),
+                org.getContactEmail(),
+                org.getCity(),
+                org.getState(),
+                org.getVerified(),
+                myRole.name(),
+                org.getCreatedAt()
+        );
     }
 
     @Transactional

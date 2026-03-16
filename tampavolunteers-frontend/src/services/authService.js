@@ -87,4 +87,32 @@ export const authService = {
     const response = await api.get('/organizations');
     return response.data;
   },
+
+  async createOrganization(data) {
+    const response = await api.post('/organizations', data);
+    return response.data;
+  },
+
+  async getMyOrganizations() {
+    const response = await api.get('/organizations/my');
+    return response.data;
+  },
+
+  async getOrgMembers(orgId) {
+    const response = await api.get(`/organizations/${orgId}/members`);
+    return response.data;
+  },
+
+  async updateOrgMemberRole(orgId, userId, role) {
+    const response = await api.put(`/organizations/${orgId}/members/${userId}/role`, { role });
+    return response.data;
+  },
+
+  async removeOrgMember(orgId, userId) {
+    await api.delete(`/organizations/${orgId}/members/${userId}`);
+  },
+
+  async deleteOrganization(id) {
+    await api.delete(`/organizations/${id}`);
+  },
 };

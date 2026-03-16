@@ -1,0 +1,6 @@
+{
+  "enabledMcpjsonServers": [
+    "ollama-tampavolunteers"
+  ],
+  "enableAllProjectMcpServers": true
+}

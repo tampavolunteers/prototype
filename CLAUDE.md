@@ -6,7 +6,7 @@ Package root: `org.tampavolunteers`
 
 ## Local LLM Delegation (MCP: ollama-tampavolunteers)
 
-You have access to a local Ollama model (qwen3:30b) via MCP tools.
+You have access to a local Ollama model (qwen3-coder:30b) via MCP tools.
 **Prefer these tools for boilerplate-heavy or repetitive generation tasks**
 to reduce latency and API usage. Use Claude's own reasoning for architecture
 decisions, debugging, and anything requiring project-wide context.

@@ -32,6 +32,11 @@ const Navbar = () => {
                 <Link to="/profile" className="hover:text-blue-200 transition">
                   Profile
                 </Link>
+                {hasRole('ORG_ADMIN') && !hasRole('ADMIN') && (
+                  <Link to="/org-dashboard" className="hover:text-blue-200 transition">
+                    My Org
+                  </Link>
+                )}
                 {hasRole('ADMIN') && (
                   <Link to="/admin" className="hover:text-blue-200 transition">
                     Admin
