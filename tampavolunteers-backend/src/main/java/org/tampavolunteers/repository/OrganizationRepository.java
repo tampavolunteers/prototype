@@ -15,4 +15,6 @@ public interface OrganizationRepository extends JpaRepository<Organization, Long
     List<Organization> findByUserId(Long userId);
 
     List<Organization> findByVerified(Boolean verified);
+
+    List<Organization> findBySeededTrue();
 }

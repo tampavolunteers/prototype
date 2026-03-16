@@ -8,6 +8,26 @@ This guide covers setting up and deploying the Tampa Volunteers platform on Open
 - OpenShift CLI (`oc`) installed
 - Git repository access for source builds
 
+## Deploying the Latest Build
+
+Images are built automatically by GitHub Actions on every push to `main` and stored in `ghcr.io`. To deploy the latest build:
+
+```bash
+cd openshift
+./setup-openshift.sh --deploy
+```
+
+| Command | Purpose |
+|---|---|
+| `./setup-openshift.sh --deploy` | Deploy latest images from ghcr.io |
+| `./setup-openshift.sh --status` | Show pods, services, and routes |
+| `oc get pods -w` | Watch pod startup in real time |
+| `oc rollout restart deployment/backend` | Force re-pull the latest image |
+
+> **Note:** The `latest` tag is only built from the `main` branch. If you want to deploy a feature branch, merge it to `main` first, or trigger the workflow manually via GitHub Actions (`workflow_dispatch`).
+
+---
+
 ## Quick Start
 
 ### 1. Install OpenShift CLI

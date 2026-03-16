@@ -9,8 +9,11 @@ import org.tampavolunteers.model.Organization;
 import org.tampavolunteers.model.User;
 import org.tampavolunteers.model.UserStatus;
 import org.tampavolunteers.repository.OpportunityRepository;
+import org.tampavolunteers.repository.OrganizationMemberRepository;
 import org.tampavolunteers.repository.OrganizationRepository;
+import org.tampavolunteers.repository.RegistrationRepository;
 import org.tampavolunteers.repository.UserRepository;
+import org.tampavolunteers.repository.VolunteerHoursRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -36,6 +39,9 @@ public class AdminCLI implements CommandLineRunner {
     private final UserRepository userRepository;
     private final OrganizationRepository organizationRepository;
     private final OpportunityRepository opportunityRepository;
+    private final RegistrationRepository registrationRepository;
+    private final VolunteerHoursRepository volunteerHoursRepository;
+    private final OrganizationMemberRepository organizationMemberRepository;
 
     private static final Random RNG = new Random();
 
@@ -150,6 +156,12 @@ public class AdminCLI implements CommandLineRunner {
                 case "seed-volunteers"    -> seedVolunteers(parseCount(args, "seed-volunteers"));
                 case "seed-organizations" -> seedOrganizations(parseCount(args, "seed-organizations"));
                 case "seed-opportunities" -> seedOpportunities(parseCount(args, "seed-opportunities"));
+                case "remove-seeded" -> {
+                    boolean opps  = args.length == 1 || hasFlag(args, "--opportunities");
+                    boolean orgs  = args.length == 1 || hasFlag(args, "--organizations");
+                    boolean users = args.length == 1 || hasFlag(args, "--volunteers");
+                    removeSeeded(opps, orgs, users);
+                }
                 default -> {
                     System.err.println("Unknown command: " + command);
                     printUsage();
@@ -343,8 +355,69 @@ public class AdminCLI implements CommandLineRunner {
     }
 
     // -------------------------------------------------------------------------
+    // Remove-seeded command
+    // -------------------------------------------------------------------------
+
+    private void removeSeeded(boolean doOpportunities, boolean doOrganizations, boolean doVolunteers) {
+        int removedOpps = 0, removedOrgs = 0, removedUsers = 0;
+
+        if (doOpportunities) {
+            List<Opportunity> seeded = opportunityRepository.findBySeededTrue();
+            for (Opportunity opp : seeded) {
+                deleteOpportunityDependencies(opp.getId());
+            }
+            opportunityRepository.deleteAll(seeded);
+            removedOpps = seeded.size();
+            System.out.printf("  Removed %d seeded opportunity records.%n", removedOpps);
+        }
+
+        if (doOrganizations) {
+            List<Organization> seeded = organizationRepository.findBySeededTrue();
+            for (Organization org : seeded) {
+                // Remove any remaining opportunities for this org (seeded ones already gone if doOpportunities ran)
+                List<Opportunity> orgOpps = opportunityRepository.findByOrganizationId(org.getId());
+                for (Opportunity opp : orgOpps) {
+                    deleteOpportunityDependencies(opp.getId());
+                }
+                opportunityRepository.deleteAll(orgOpps);
+                organizationMemberRepository.deleteAll(organizationMemberRepository.findByOrganizationId(org.getId()));
+            }
+            organizationRepository.deleteAll(seeded);
+            removedOrgs = seeded.size();
+            System.out.printf("  Removed %d seeded organization records.%n", removedOrgs);
+        }
+
+        if (doVolunteers) {
+            List<User> seeded = userRepository.findByEmailEndingWith("@example.com");
+            for (User user : seeded) {
+                volunteerHoursRepository.deleteAll(volunteerHoursRepository.findByUserId(user.getId()));
+                registrationRepository.deleteAll(registrationRepository.findByUserId(user.getId()));
+                organizationMemberRepository.deleteAll(organizationMemberRepository.findByUserId(user.getId()));
+            }
+            userRepository.deleteAll(seeded);
+            removedUsers = seeded.size();
+            System.out.printf("  Removed %d seeded volunteer records.%n", removedUsers);
+        }
+
+        System.out.printf("Done. Removed %d opportunities, %d organizations, %d volunteers.%n",
+                removedOpps, removedOrgs, removedUsers);
+    }
+
+    private void deleteOpportunityDependencies(Long opportunityId) {
+        volunteerHoursRepository.deleteAll(volunteerHoursRepository.findByOpportunityId(opportunityId));
+        registrationRepository.deleteAll(registrationRepository.findByOpportunityId(opportunityId));
+    }
+
+    // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
+
+    private boolean hasFlag(String[] args, String flag) {
+        for (String arg : args) {
+            if (flag.equals(arg)) return true;
+        }
+        return false;
+    }
 
     private int parseCount(String[] args, String command) {
         if (args.length < 2) {
@@ -389,6 +462,10 @@ public class AdminCLI implements CommandLineRunner {
                   seed-volunteers <N>          Create N fake volunteer accounts
                   seed-organizations <N>       Create N fake organizations
                   seed-opportunities <N>       Create N fake published opportunities
+                  remove-seeded                Remove all seeded data (volunteers, orgs, opportunities)
+                    [--volunteers]             Remove only seeded volunteers (@example.com accounts)
+                    [--organizations]          Remove only seeded organizations
+                    [--opportunities]          Remove only seeded opportunities
                 """);
     }
 }

@@ -31,4 +31,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findByLastLoginAtAfter(LocalDateTime since);
 
     Page<User> findByIsPublicTrue(Pageable pageable);
+
+    List<User> findByEmailEndingWith(String suffix);
 }
