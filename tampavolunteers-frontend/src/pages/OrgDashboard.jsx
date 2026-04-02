@@ -131,7 +131,7 @@ const OrgCard = ({ org, onRefresh }) => {
             onClick={handleToggle}
             className="px-3 py-1.5 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition"
           >
-            Manage {expanded ? '▲' : '▾'}
+            <span> Manage </span> <span className="text-[.6rem] bg-blue-500 pl-1 pr-1 pt-0.5 pb-0.5 rounded-full"> {expanded ? '▲' : '▼'} </span>
           </button>
         </div>
       </div>

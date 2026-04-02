@@ -6,7 +6,7 @@ const Home = () => {
   const { isAuthenticated } = useAuth();
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="w-full mx-auto">
       <div className="text-center py-12">
         <h1 className="text-5xl font-bold text-gray-800 mb-6">
           Welcome to Tampa Volunteers

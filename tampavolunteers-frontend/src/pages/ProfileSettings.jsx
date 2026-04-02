@@ -103,7 +103,7 @@ const ProfileSettings = () => {
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="w-auto mx-auto">
       <h1 className="text-3xl font-bold mb-6 text-gray-800">Profile Settings</h1>
 
       {message && (
@@ -117,116 +117,156 @@ const ProfileSettings = () => {
         </div>
       )}
 
-      {/* Profile Form */}
-      <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-        <h2 className="text-xl font-bold mb-4 text-gray-800">Basic Information</h2>
-        <form onSubmit={handleSaveProfile}>
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div>
-              <label className="block text-gray-700 text-sm font-bold mb-2">First Name</label>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-7 w-full">
+      <div>
+        {/* Profile Form */}
+        <div className="bg-white p-6 rounded-2xl shadow-md mb-6">
+          <h2 className="text-xl font-bold mb-4 text-gray-800">Basic Information</h2>
+          <form onSubmit={handleSaveProfile}>
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-gray-700 text-sm font-bold mb-2">First Name</label>
+                <input
+                  type="text"
+                  name="firstName"
+                  value={formData.firstName}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-gray-700 text-sm font-bold mb-2">Last Name</label>
+                <input
+                  type="text"
+                  name="lastName"
+                  value={formData.lastName}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                />
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2">Phone</label>
               <input
-                type="text"
-                name="firstName"
-                value={formData.firstName}
+                type="tel"
+                name="phone"
+                value={formData.phone}
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
               />
             </div>
-            <div>
-              <label className="block text-gray-700 text-sm font-bold mb-2">Last Name</label>
-              <input
-                type="text"
-                name="lastName"
-                value={formData.lastName}
+
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2">Bio</label>
+              <textarea
+                name="bio"
+                value={formData.bio}
                 onChange={handleChange}
+                rows={4}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                placeholder="Tell us about yourself..."
               />
             </div>
-          </div>
 
-          <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2">Phone</label>
-            <input
-              type="tel"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-            />
-          </div>
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2">Avatar URL</label>
+              <input
+                type="url"
+                name="avatarUrl"
+                value={formData.avatarUrl}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                placeholder="https://..."
+              />
+            </div>
 
-          <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2">Bio</label>
-            <textarea
-              name="bio"
-              value={formData.bio}
-              onChange={handleChange}
-              rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-              placeholder="Tell us about yourself..."
-            />
-          </div>
+            <button
+              type="submit"
+              disabled={saving}
+              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition disabled:bg-gray-400"
+            >
+              {saving ? 'Saving...' : 'Save Profile'}
+            </button>
+          </form>
+        </div>
 
-          <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2">Avatar URL</label>
-            <input
-              type="url"
-              name="avatarUrl"
-              value={formData.avatarUrl}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-              placeholder="https://..."
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={saving}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition disabled:bg-gray-400"
+        {/* Status */}
+        <div className="bg-white p-6 rounded-2xl shadow-md mb-6">
+          <h2 className="text-xl font-bold mb-4 text-gray-800">Volunteer Status</h2>
+          <select
+            value={profile?.userStatus || 'VOLUNTEER'}
+            onChange={handleStatusChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
           >
-            {saving ? 'Saving...' : 'Save Profile'}
-          </button>
-        </form>
-      </div>
+            {USER_STATUS_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
 
-      {/* Status */}
-      <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-        <h2 className="text-xl font-bold mb-4 text-gray-800">Volunteer Status</h2>
-        <select
-          value={profile?.userStatus || 'VOLUNTEER'}
-          onChange={handleStatusChange}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-        >
-          {USER_STATUS_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Visibility */}
-      <div className="bg-white p-6 rounded-lg shadow-md">
-        <h2 className="text-xl font-bold mb-4 text-gray-800">Profile Visibility</h2>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-gray-700 font-medium">Public Profile</p>
-            <p className="text-gray-500 text-sm">
-              Allow other users to find and view your profile.
-            </p>
+        {/* Visibility */}
+        <div className="bg-white p-6 rounded-2xl shadow-md">
+          <h2 className="text-xl font-bold mb-4 text-gray-800">Profile Visibility</h2>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-700 font-medium">Public Profile</p>
+              <p className="text-gray-500 text-sm">
+                Allow other users to find and view your profile.
+              </p>
+            </div>
+            <button
+              onClick={handleVisibilityToggle}
+              className={`px-4 py-2 rounded-lg font-medium transition ${
+                profile?.isPublic
+                  ? 'bg-green-500 hover:bg-green-600 text-white'
+                  : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+              }`}
+            >
+              {profile?.isPublic ? 'Public' : 'Private'}
+            </button>
           </div>
-          <button
-            onClick={handleVisibilityToggle}
-            className={`px-4 py-2 rounded-lg font-medium transition ${
-              profile?.isPublic
-                ? 'bg-green-500 hover:bg-green-600 text-white'
-                : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
-            }`}
-          >
-            {profile?.isPublic ? 'Public' : 'Private'}
-          </button>
         </div>
       </div>
+
+      {/* Profile Prev. */}
+      <div>
+        <div className="bg-white p-6 rounded-2xl shadow-md mb-6 h-full">
+          <div className="flex flex-col items-center text-center">
+            <img
+              src={formData.avatarUrl || "https://placehold.co/600x600/png/?text=No Picture"}
+              alt="Profile"
+              className="w-32 h-32 rounded-full object-cover"
+            />
+
+            <p className="font-bold mt-3 text-lg text-gray-800">
+              {formData.firstName || "First"} {formData.lastName || "Last"}
+            </p>
+
+            <p className="text-sm text-gray-500 mt-1">
+              {profile?.userStatus
+                ?.replace("_", " ")
+                .toLowerCase()
+                .replace(/\b\w/g, (c) => c.toUpperCase())}
+            </p>
+          </div>
+
+          <p className="mt-4 text-gray-700 italic text-center">
+            { formData.bio || "No bio added yet."}
+          </p>
+
+          <div className="mt-6 text-sm text-gray-900 text-center">
+            { formData.phone || "No phone number provided"}
+          </div>
+
+          <div className="mt-4 text-xs text-gray-500 text-center">
+            {profile?.isPublic ? "Public Profile" : "Private Profile"}
+          </div>
+        </div>
+      </div>
+    </div>
     </div>
   );
 };

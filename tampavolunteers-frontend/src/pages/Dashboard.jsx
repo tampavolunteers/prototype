@@ -19,7 +19,6 @@ const STATUS_LABELS = {
   INACTIVE:            'Inactive',
 };
 
-// Returns all roles the user holds, highest first (e.g. SUPER_ADMIN → [SUPER_ADMIN, ADMIN, ORG_ADMIN, VOLUNTEER])
 function getCumulativeRoles(role) {
   const idx = ROLE_HIERARCHY.indexOf(role);
   if (idx < 0) return [role];
@@ -31,17 +30,39 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [showOrgForm, setShowOrgForm] = useState(false);
   const roles = getCumulativeRoles(user?.role);
+  const [showEmail, setShowEmail] = useState(false);
+
+  const toggleShowEmail = () => {
+    setShowEmail(prev => !prev);
+  };
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <h1 className="text-4xl font-bold mb-6 text-gray-800">Dashboard</h1>
+    <div className="w-full mx-auto">
+      <h1 className="text-4xl font-bold mb-6 text-gray-800">Dashboard</h1>  
 
       <div className="bg-white p-6 rounded-lg shadow-md mb-6">
         <h2 className="text-2xl font-bold mb-4 text-gray-800">Welcome, {user?.firstName}!</h2>
-        <p className="text-gray-600 mb-3">Email: {user?.email}</p>
+
+        <div className="relative inline-block items-center justify-center h-6">
+          <p className={`text-gray-600 transition ${showEmail ? '' : 'blur-sm'}`}>
+            {user?.email}
+          </p>
+
+          {!showEmail && (
+            <span className="absolute inset-0 flex items-center justify-center text-sm text-black">
+              <button
+                type="button"
+                onClick={toggleShowEmail}
+              >
+                Click or tap to show email
+              </button>
+            </span>
+          )}
+        </div>
+        
         <div className="mb-3">
           <p className="text-sm text-gray-500 mb-1">Roles</p>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 justify-center">
             {roles.map(role => (
               <span
                 key={role}
@@ -66,16 +87,16 @@ const Dashboard = () => {
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h3 className="text-xl font-bold mb-3 text-gray-800">My Registrations</h3>
           <p className="text-gray-600">View your upcoming volunteer opportunities here.</p>
-          <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
-            View Registrations
+          <button className="mt-4 bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-600 transition">
+            Under Construction
           </button>
         </div>
 
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h3 className="text-xl font-bold mb-3 text-gray-800">Volunteer Hours</h3>
           <p className="text-gray-600">Track your volunteer hours and impact.</p>
-          <button className="mt-4 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition">
-            View Hours
+          <button className="mt-4 bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-600 transition">
+            Under Construction
           </button>
         </div>
 
