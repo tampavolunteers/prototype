@@ -13,7 +13,12 @@
       "Bash(test -f:*)",
       "Bash(docker exec:*)",
       "Bash(docker-compose build:*)",
-      "Bash(lsof:*)"
+      "Bash(lsof:*)",
+      "Bash(find /Users/tpowell/tampavolunteers/prototype/tampavolunteers-frontend -type f \\\\\\(-name *.ts -o -name *.tsx -o -name *.js -o -name *.jsx \\\\\\))",
+      "Bash(git -C /Users/tpowell/tampavolunteers/prototype log --oneline --all -- .env)",
+      "Bash(git -C /Users/tpowell/tampavolunteers/prototype log --oneline --all -- openshift/base/secret.yaml)",
+      "Bash(./mvnw test:*)",
+      "Bash(./mvnw clean:*)"
     ],
     "deny": [],
     "ask": []

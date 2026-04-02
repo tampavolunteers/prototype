@@ -100,16 +100,31 @@ public class PasswordResetUtility implements CommandLineRunner {
             return;
         }
 
-        System.out.print("Enter new password: ");
-        String newPassword = scanner.nextLine().trim();
+        java.io.Console console = System.console();
+        char[] passwordChars;
+        if (console != null) {
+            passwordChars = console.readPassword("Enter new password: ");
+        } else {
+            System.out.print("Enter new password: ");
+            passwordChars = scanner.nextLine().trim().toCharArray();
+        }
+        String newPassword = new String(passwordChars);
+        java.util.Arrays.fill(passwordChars, '\0');
 
         if (newPassword.length() < 8) {
             System.out.println("❌ Password must be at least 8 characters long.");
             return;
         }
 
-        System.out.print("Confirm new password: ");
-        String confirmPassword = scanner.nextLine().trim();
+        char[] confirmChars;
+        if (console != null) {
+            confirmChars = console.readPassword("Confirm new password: ");
+        } else {
+            System.out.print("Confirm new password: ");
+            confirmChars = scanner.nextLine().trim().toCharArray();
+        }
+        String confirmPassword = new String(confirmChars);
+        java.util.Arrays.fill(confirmChars, '\0');
 
         if (!newPassword.equals(confirmPassword)) {
             System.out.println("❌ Passwords do not match.");

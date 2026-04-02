@@ -8,6 +8,8 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -56,9 +58,11 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                 email = fetchGithubPrimaryEmail(userRequest);
             }
 
-            // If still null after API call, use the fallback
+            // Reject if no verified email could be obtained — do not use synthetic fallback addresses
             if (email == null || email.isEmpty()) {
-                email = fetchGithubEmailFallback(attributes);
+                throw new OAuth2AuthenticationException(new OAuth2Error("email_not_found"),
+                        "No verified email address found for your GitHub account. " +
+                        "Please make your primary email public in GitHub settings and try again.");
             }
 
             String[] fullName = splitName((String) attributes.get("name"));
@@ -73,7 +77,8 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         }
 
         if (email == null) {
-            throw new RuntimeException("No email provided by OAuth2 provider.");
+            throw new OAuth2AuthenticationException(new OAuth2Error("email_not_found"),
+                    "No verified email address provided by OAuth2 provider.");
         }
 
         // Determine the auth provider enum
@@ -126,15 +131,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             return null;
         }
         return new String[] { firstName, lastName };
-    }
-
-    // Why is this even a thing, lul
-    private String fetchGithubEmailFallback(Map<String, Object> attributes) {
-        Object login = attributes.get("login");
-        if (login != null) {
-            return login + "@users.noreply.github.com";
-        }
-        return null;
     }
 
     /**

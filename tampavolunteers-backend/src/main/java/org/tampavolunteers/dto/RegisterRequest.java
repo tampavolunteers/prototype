@@ -30,7 +30,4 @@ public class RegisterRequest {
     private String lastName;
 
     private String phone;
-
-    @NotBlank(message = "Role is required")
-    private String role;
 }

@@ -46,12 +46,7 @@ public class AuthService {
         user.setLastName(request.getLastName());
         user.setPhone(request.getPhone());
         user.setLastLoginAt(LocalDateTime.now());
-
-        try {
-            user.setRole(User.UserRole.valueOf(request.getRole().toUpperCase()));
-        } catch (IllegalArgumentException e) {
-            throw new BadRequestException("Invalid role: " + request.getRole());
-        }
+        user.setRole(User.UserRole.VOLUNTEER);
 
         User savedUser = userRepository.save(user);
 

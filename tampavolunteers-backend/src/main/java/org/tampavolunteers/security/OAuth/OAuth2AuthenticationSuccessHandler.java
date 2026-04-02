@@ -16,8 +16,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.tampavolunteers.security.CustomUserDetailsService;
 
 import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 
 @Component
 @RequiredArgsConstructor
@@ -26,6 +24,7 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
     private final CustomUserDetailsService userDetailsService;
+    private final OAuthCodeStore oAuthCodeStore;
 
     @Value("${app.frontend-url:http://localhost:3000}")
     private String frontendUrl;
@@ -43,30 +42,23 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
             // Extract email from OAuth2User attributes
             email = oauth2User.getAttribute("email");
 
-            // If email is null (GitHub with private email), try to find user by provider ID
+            // If email is null (GitHub with private email), look up by provider ID
             if (email == null) {
                 Object idObj = oauth2User.getAttribute("id");
                 String providerId = idObj != null ? idObj.toString() : null;
-                String login = oauth2User.getAttribute("login");
 
-                // Determine which provider this is (GitHub in this case since Google always has
-                // email)
-                // We need to determine the auth provider to query correctly
                 if (providerId != null) {
-                    // Try GitHub first (since we're here because email was null)
                     email = userRepository.findByProviderIdAndAuthProvider(providerId, User.AuthProvider.GITHUB)
                             .map(User::getEmail)
                             .orElse(null);
 
-                    // If not found with GitHub, try Google (shouldn't happen, but defensive)
                     if (email == null) {
                         email = userRepository.findByProviderIdAndAuthProvider(providerId, User.AuthProvider.GOOGLE)
                                 .map(User::getEmail)
-                                .orElse(login != null ? login + "@users.noreply.github.com" : null);
+                                .orElse(null);
                     }
-                } else if (login != null) {
-                    email = login + "@users.noreply.github.com";
                 }
+                // No synthetic fallback email — if we still have no email the request fails below
             }
         } else if (principal instanceof User customUser) {
             email = customUser.getEmail();
@@ -81,9 +73,7 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(email);
         String token = jwtUtil.generateToken(userDetails);
-        String redirectUrl = frontendUrl + "/oauth-success?token=" +
-                URLEncoder.encode(token, StandardCharsets.UTF_8);
-
-        response.sendRedirect(redirectUrl);
+        String code = oAuthCodeStore.store(token);
+        response.sendRedirect(frontendUrl + "/oauth-success?code=" + code);
     }
 }

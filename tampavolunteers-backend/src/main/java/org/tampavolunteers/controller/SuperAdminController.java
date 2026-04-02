@@ -12,6 +12,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.tampavolunteers.dto.AuditLogDTO;
 import org.tampavolunteers.dto.ChangeRoleDTO;
+import org.tampavolunteers.dto.UserProfileDTO;
 import org.tampavolunteers.exception.BadRequestException;
 import org.tampavolunteers.exception.NotFoundException;
 import org.tampavolunteers.model.AdminAuditLog;
@@ -31,7 +32,7 @@ public class SuperAdminController {
     private final AuditService auditService;
 
     @PutMapping("/users/{id}/role")
-    public ResponseEntity<User> changeUserRole(
+    public ResponseEntity<UserProfileDTO> changeUserRole(
             @PathVariable Long id,
             @Valid @RequestBody ChangeRoleDTO dto,
             @AuthenticationPrincipal UserDetails principal,
@@ -69,7 +70,7 @@ public class SuperAdminController {
                 request.getRemoteAddr()
         );
 
-        return ResponseEntity.ok(target);
+        return ResponseEntity.ok(UserProfileDTO.from(target));
     }
 
     @DeleteMapping("/users/{id}")
