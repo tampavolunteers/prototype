@@ -53,12 +53,13 @@ const OpportunityDetail = () => {
       <div className="bg-white rounded-lg shadow-md p-8 mt-4">
         <div className="flex items-start justify-between mb-2">
           <h1 className="text-3xl font-bold text-gray-800 flex-1">{opp.title}</h1>
-          <span className={`ml-4 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap ${STATUS_STYLES[opp.status] || 'bg-gray-100 text-gray-800'}`}>
+          
+        </div>
+        <span className={`ml-4 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap ${STATUS_STYLES[opp.status] || 'bg-gray-100 text-gray-800'}`}>
             {opp.status}
           </span>
-        </div>
 
-        <p className="text-blue-700 font-medium mb-1">{opp.organizationName}</p>
+        <p className="text-blue-700 font-medium mb-1 mt-2">{opp.organizationName}</p>
 
         {opp.categoryName && (
           <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 text-sm font-medium rounded mb-4">
