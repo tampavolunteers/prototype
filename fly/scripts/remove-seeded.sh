@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Remove seeded data from the deployed OpenShift environment.
+# Remove seeded data from the deployed Fly.io environment.
 # Usage: ./remove-seeded.sh [--volunteers] [--organizations] [--opportunities]
 # Default (no flags): removes all three.
 set -euo pipefail
