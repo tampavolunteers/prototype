@@ -3,9 +3,11 @@ package org.tampavolunteers.security.OAuth;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
@@ -81,6 +83,15 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(email);
         String token = jwtUtil.generateToken(userDetails);
+
+        // The JWT is the credential from here on; drop the OAuth2 login session so its
+        // JSESSIONID (sent same-origin through the /api proxy) can't shadow the JWT's roles.
+        SecurityContextHolder.clearContext();
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            session.invalidate();
+        }
+
         String redirectUrl = frontendUrl + "/oauth-success?token=" +
                 URLEncoder.encode(token, StandardCharsets.UTF_8);
 
