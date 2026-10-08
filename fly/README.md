@@ -4,18 +4,19 @@ This guide covers setting up and deploying the Tampa Volunteers platform on Fly.
 
 ## Architecture
 
-```
-                        Fly.io Organization
-  ┌───────────────────┐   internal 6PN network   ┌───────────────────┐
-  │ tampavolunteers-  │──────────────────────────▶│ tampavolunteers-  │
-  │ frontend (Nginx)  │  proxy /api ->            │ backend (Spring)  │
-  │ public: *.fly.dev │  backend.internal:8080    │ public: *.fly.dev │
-  └───────────────────┘                           └─────────┬─────────┘
-                                                              │ postgres://...flycast:5432
-                                                    ┌─────────▼─────────┐
-                                                    │ tampavolunteers-db │
-                                                    │ (Fly Postgres)     │
-                                                    └────────────────────┘
+```mermaid
+flowchart LR
+    user(["Browser"])
+
+    subgraph org["Fly.io organization"]
+        frontend["<b>tampavolunteers-frontend</b><br/>Nginx + Vite build<br/>public: *.fly.dev"]
+        backend["<b>tampavolunteers-backend</b><br/>Spring Boot<br/>public: *.fly.dev"]
+        db[("<b>tampavolunteers-db</b><br/>Fly Postgres")]
+    end
+
+    user -- "HTTPS" --> frontend
+    frontend -- "proxy /api<br/>backend.internal:8080<br/>(6PN private network)" --> backend
+    backend -- "postgres://…flycast:5432" --> db
 ```
 
 Each component is its own Fly app: `tampavolunteers-backend`, `tampavolunteers-frontend`,
