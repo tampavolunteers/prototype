@@ -43,7 +43,9 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             }
         }
 
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+        // A Bearer JWT always wins over any session-restored authentication (e.g. the
+        // OAuth2AuthenticationToken left in the session after OAuth login, which has no app roles).
+        if (username != null) {
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
 
             if (jwtUtil.validateToken(jwt, userDetails)) {
