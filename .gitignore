@@ -33,3 +33,6 @@ backup-*.sql
 # Fly.io
 fly/.fly/
 .fly.toml.bak
+
+# Legacy openshift
+openshift/
