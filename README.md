@@ -339,6 +339,11 @@ docker volume inspect tampavolunteers_postgres_data
 
 **📖 For detailed Docker documentation, see [DOCKER.md](DOCKER.md)**
 
+## Deployment
+
+- **Fly.io** (production-like, deployed from `main` by GitHub Actions): see [`fly/README.md`](fly/README.md)
+- **Cloudflare Tunnel dev site** at `tampavolunteers.org` (self-hosted Docker Compose): see [`cloudflare/README.md`](cloudflare/README.md)
+
 ## Troubleshooting
 
 ### Backend won't start
