@@ -1,0 +1,152 @@
+# Self-hosted dev site exposed through a Cloudflare Tunnel.
+#
+# Mirrors the Fly.io layout (see ../fly/README.md):
+#   frontend  - Nginx serving the production Vite build, proxies /api to backend
+#   backend   - Spring Boot, prod profile, Flyway disabled at runtime
+#   migrate   - one-shot Flyway run before backend starts (Fly's release_command)
+#   postgres  - Postgres with a persistent volume (Fly Postgres)
+#   cloudflared - outbound-only tunnel; routes tampavolunteers.org -> frontend
+#                 and api.tampavolunteers.org -> backend (see config.yml)
+#
+# Nothing is published to the LAN. The frontend and Postgres are bound to
+# 127.0.0.1 only, for local smoke tests and DB tooling.
+#
+# Usage (from this directory): ./setup-tunnel.sh --help
+
+name: tampavolunteers-tunnel
+
+x-backend-image: &backend-image
+  image: tampavolunteers-backend:tunnel
+  build:
+    context: ../tampavolunteers-backend
+    dockerfile: Dockerfile
+  # Fly runs the backend on a 1 GB VM. Cap it here too, so the JVM doesn't
+  # size its heap from host RAM, with some headroom for a dev site.
+  mem_limit: 1536m
+
+x-backend-env: &backend-env
+  # Size the heap from the container limit (~1.1 GiB), leaving room for
+  # metaspace, thread stacks and other off-heap memory.
+  JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=75
+  SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-tampavolunteers}
+  SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-tampavolunteers}
+  SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in cloudflare/.env (run ./setup-tunnel.sh)}
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-tampavolunteers}
+      POSTGRES_USER: ${POSTGRES_USER:-tampavolunteers}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in cloudflare/.env (run ./setup-tunnel.sh)}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5434}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Equivalent of fly.toml's [deploy] release_command: runs migrations once
+  # per `up`, then exits. backend waits for it to succeed.
+  migrate:
+    <<: *backend-image
+    restart: "no"
+    environment:
+      <<: *backend-env
+      SPRING_PROFILES_ACTIVE: prod
+    command:
+      - --spring.main.web-application-type=none
+      - --spring.main.lazy-initialization=true
+      - --spring.flyway.enabled=true
+      - --spring.jpa.hibernate.ddl-auto=none
+      - --spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration,org.springframework.boot.autoconfigure.security.oauth2.client.servlet.OAuth2ClientAutoConfiguration
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  backend:
+    <<: *backend-image
+    restart: unless-stopped
+    environment:
+      <<: *backend-env
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_FLYWAY_ENABLED: "false"
+      CORS_ALLOWED_ORIGINS: https://${SITE_HOSTNAME:-tampavolunteers.org}
+      APP_FRONTEND_URL: https://${SITE_HOSTNAME:-tampavolunteers.org}
+      # The prod profile only trusts X-Forwarded-* from Fly's private network.
+      # Here the proxies (nginx, cloudflared) sit on the compose bridge network.
+      # Backend has no host port, so only those containers can reach it.
+      SERVER_TOMCAT_REMOTEIP_INTERNALPROXIES: '10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2[0-9]|3[01])\.\d{1,3}\.\d{1,3}'
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in cloudflare/.env (run ./setup-tunnel.sh)}
+      # Spring rejects empty OAuth2 client ids, so fall back to a placeholder.
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-unset}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-unset}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-unset}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-unset}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      # The temurin JRE image has bash but no curl/wget.
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /api/actuator/health HTTP/1.0\\r\\n\\r\\n' >&3 && grep -q UP <&3"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+  frontend:
+    build:
+      context: ../tampavolunteers-frontend
+      dockerfile: Dockerfile.prod
+      args:
+        VITE_API_BASE_URL: /api
+        VITE_APP_NAME: Tampa Volunteers
+    restart: unless-stopped
+    volumes:
+      # Swap the Fly-specific nginx.conf (6PN resolver, *.internal upstream)
+      # for one that targets the compose network.
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "127.0.0.1:${FRONTEND_PORT:-8081}:8080"
+    depends_on:
+      - backend
+
+  cloudflared:
+    image: cloudflare/cloudflared:${CLOUDFLARED_VERSION:-latest}
+    restart: unless-stopped
+    command:
+      - tunnel
+      - --no-autoupdate
+      - --config
+      - /etc/cloudflared/config.yml
+      - run
+      - ${CLOUDFLARE_TUNNEL_ID:?Set CLOUDFLARE_TUNNEL_ID in cloudflare/.env (run ./setup-tunnel.sh)}
+    volumes:
+      - ./config.yml:/etc/cloudflared/config.yml:ro
+      - ./.cloudflared/credentials.json:/etc/cloudflared/credentials.json:ro
+    depends_on:
+      - frontend
+      - backend
+
+  # One-shot AdminCLI runner. Usage: ./scripts/run-cli.sh <command> [args]
+  cli:
+    <<: *backend-image
+    restart: "no"
+    entrypoint: ["java", "-Dspring.profiles.include=cli", "-Dspring.main.web-application-type=none", "-jar", "app.jar"]
+    environment:
+      <<: *backend-env
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_FLYWAY_ENABLED: "false"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - tools
+
+volumes:
+  postgres_data:

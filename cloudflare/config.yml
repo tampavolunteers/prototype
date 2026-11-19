@@ -1,0 +1,21 @@
+# cloudflared ingress rules for the dev site (locally-managed tunnel).
+# The tunnel ID is passed on the command line from CLOUDFLARE_TUNNEL_ID in .env.
+# The credentials file is written by ./setup-tunnel.sh and mounted by
+# docker-compose.yml.
+#
+# If you change these hostnames, also set SITE_HOSTNAME / API_HOSTNAME in .env
+# and re-run ./setup-tunnel.sh --dns.
+
+credentials-file: /etc/cloudflared/credentials.json
+
+ingress:
+  # Public site: Nginx serves the SPA and proxies /api to the backend.
+  - hostname: tampavolunteers.org
+    service: http://frontend:8080
+
+  # Backend API, reachable directly (like tampavolunteers-backend.fly.dev).
+  # Spring's context path is /api, so endpoints are https://api.tampavolunteers.org/api/...
+  - hostname: api.tampavolunteers.org
+    service: http://backend:8080
+
+  - service: http_status:404

@@ -36,3 +36,7 @@ fly/.fly/
 
 # Legacy openshift
 openshift/
+
+# Cloudflare Tunnel (credentials + secrets)
+cloudflare/.cloudflared/
+cloudflare/.env
