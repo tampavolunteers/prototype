@@ -20,8 +20,14 @@ x-backend-image: &backend-image
   build:
     context: ../tampavolunteers-backend
     dockerfile: Dockerfile
+  # Fly runs the backend on a 1 GB VM. Cap it here too, so the JVM doesn't
+  # size its heap from host RAM, with some headroom for a dev site.
+  mem_limit: 1536m
 
-x-db-env: &db-env
+x-backend-env: &backend-env
+  # Size the heap from the container limit (~1.1 GiB), leaving room for
+  # metaspace, thread stacks and other off-heap memory.
+  JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=75
   SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-tampavolunteers}
   SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-tampavolunteers}
   SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in cloudflare/.env (run ./setup-tunnel.sh)}
@@ -51,7 +57,7 @@ services:
     <<: *backend-image
     restart: "no"
     environment:
-      <<: *db-env
+      <<: *backend-env
       SPRING_PROFILES_ACTIVE: prod
     command:
       - --spring.main.web-application-type=none
@@ -67,7 +73,7 @@ services:
     <<: *backend-image
     restart: unless-stopped
     environment:
-      <<: *db-env
+      <<: *backend-env
       SPRING_PROFILES_ACTIVE: prod
       SPRING_FLYWAY_ENABLED: "false"
       CORS_ALLOWED_ORIGINS: https://${SITE_HOSTNAME:-tampavolunteers.org}
@@ -133,7 +139,7 @@ services:
     restart: "no"
     entrypoint: ["java", "-Dspring.profiles.include=cli", "-Dspring.main.web-application-type=none", "-jar", "app.jar"]
     environment:
-      <<: *db-env
+      <<: *backend-env
       SPRING_PROFILES_ACTIVE: prod
       SPRING_FLYWAY_ENABLED: "false"
     depends_on:
